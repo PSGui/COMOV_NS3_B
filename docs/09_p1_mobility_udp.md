@@ -13,7 +13,7 @@ Não confundir sucesso no envio com receção, associação com serviço utiliz�
 | Parâmetro | Valor P1 | Origem |
 |---|---|---|
 | ns-3 / Wi-Fi | ns-3.48 / 802.11g, 2,412 GHz, canal 1 | P0 + escolha provisória |
-| PHY | OFDM fixo 6 Mbit/s; 20 dBm; Gtx=Grx=0 dB | P0, provisório |
+| PHY | ERP-OFDM fixo 6 Mbit/s (`ErpOfdmRate6Mbps`); 20 dBm; Gtx=Grx=0 dB | corrigido após abort de validação no ns-3.48 |
 | Propagação | log-distance, n=3, d0=1 m, ReferenceLoss=FSPL(2,412 GHz,1 m) | P0 |
 | AP | (0,0,4) m | hipótese |
 | Autocarro | ConstantVelocityMobilityModel, altura 2,5 m | movimento contínuo |
@@ -113,3 +113,7 @@ O ns-3 pode manter a associação durante um intervalo após perda de capacidade
 - [ns-3.48 ConstantVelocityMobilityModel](https://fossies.org/linux/privat/ns-3.48.tar.bz2/ns-3.48/src/mobility/model/constant-velocity-mobility-model.cc)
 - [ns-3.48 UDP server receive callback](https://fossies.org/dox/ns-3.48/udp-echo-server_8cc_source.html)
 - Worksheet B: B10 p. 12; método geral pp. 1–3.
+
+## Incidente de integração P1 — primeira execução
+
+Na primeira execução do utilizador (`bash scripts/run_p1.sh ../../ns-3 5 10`), o programa **compilou** mas abortou em t=46,959028 s. Diagnóstico confirmado no ns-3.48, `wifi-tx-vector.cc:529`: `OfdmRate6Mbps` (classe OFDM) não é modo de dados válido na banda de 2,4 GHz para o standard 802.11g. Correção: `DataMode` e `ControlMode` passam a `ErpOfdmRate6Mbps` (classe ERP-OFDM). O P0 anterior não encontrou o problema porque não enviou dados UDP. Não existem ainda resultados UDP P1 válidos. Após integrar a correção, recompilar e repetir; a mensagem `PASS` do validador e os CSV deverão ser enviados para revisão.
