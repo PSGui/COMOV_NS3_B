@@ -25,6 +25,34 @@ t_0.975,9 ≈ 2.262
 
 A tabela representa **diferenças emparelhadas por seed/run e cenário**, não a diferença de percentagens estimadas em amostras independentes. As conclusões referem-se ao código, parâmetros e configuração de propagação atuais.
 
+## Auditoria do ficheiro agregado recebido
+
+Ficheiro analisado diretamente: `paired_statistics.csv`, recebido a 23/11/2026. SHA-256: `27ba59669fb61a0fa8712e1446e308c57e601ffcd763d3a3eb2b7dd8adf67df1`. Contém **6 linhas de cenários e 13 colunas**, incluindo taxas médias das duas políticas, diferença emparelhada, limites IC95% e médias de descarte/ocupação. Não contém os valores individuais das dez runs. A integridade aritmética foi verificada: taxa FIFO menos taxa imediata coincide com diferença reportada, e a média do acréscimo de mensagens corresponde à diferença em pontos percentuais multiplicada por 120.
+
+### Médias exatas por política obtidas do CSV (n=10 pares por condição)
+
+| v m/s | Paragem s | Taxa imediata média | Taxa FIFO média | Ganho (pp) | Média de mensagens adicionais |
+|---:|---:|---:|---:|---:|---:|
+| 5 | 0 | 38,5092% | 69,2833% | +30,7742 | +3692,9 |
+| 5 | 10 | 46,8425% | 77,6167% | +30,7742 | +3692,9 |
+| 5 | 30 | 63,5092% | 94,2833% | +30,7742 | +3692,9 |
+| 15 | 0 | 12,8042% | 46,1292% | +33,3250 | +3999,0 |
+| 15 | 10 | 21,1375% | 54,4625% | +33,3250 | +3999,0 |
+| 15 | 30 | 37,8042% | 71,1292% | +33,3250 | +3999,0 |
+
+### Média de perdas de aplicação e ocupação FIFO, por simulação
+
+| v m/s | Paragem s | Overflow `drop-newest` | Expiradas antes de envio | Ocupação de pico média |
+|---:|---:|---:|---:|---:|
+| 5 | 0 | 0,0 | 3588,1 | 3,6939 MB |
+| 5 | 10 | 0,0 | 2585,2 | 3,6939 MB |
+| 5 | 30 | 0,0 | 587,8 | 3,6939 MB |
+| 15 | 0 | 2366,6 | 4000,0 | 4,0000 MB |
+| 15 | 10 | 1366,4 | 4000,0 | 4,0000 MB |
+| 15 | 30 | 1235,5 | 2130,9 | 4,0000 MB |
+
+**Interpretação:** maior paragem aumenta a média de entregas nas duas políticas, e reduz as expirações na FIFO. A maior velocidade esgota os 4 MB de capacidade em todos os casos estudados. Os intervalos de confiança disponibilizados são apenas para a **diferença emparelhada FIFO−imediato**; não devem ser desenhados como margens de erro das taxas individuais. A partir de um CSV agregado, não é possível recalcular independentemente o desvio-padrão das dez diferenças nem todos os percentis de atraso.
+
 ## O que está realmente demonstrado
 
 1. O código ns-3 completou as 120 simulações no conjunto de configurações experimentais declarado, com validação automática por cenário e par. O log de conclusão das últimas 108 execuções reportou `108 newly executed, 0 reused; 54 pairs`.
