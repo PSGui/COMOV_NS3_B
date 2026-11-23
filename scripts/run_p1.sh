@@ -40,6 +40,7 @@ if [[ -e "$SCRATCH" ]] && ! head -n 1 "$SCRATCH" | grep -q 'COMOV B10 - P1'; the
   echo "Refusing to overwrite unrelated scratch program: $SCRATCH" >&2
   exit 1
 fi
+python3 "$PROJECT_DIR/scripts/check_wifi_modes.py"
 cp "$SOURCE" "$SCRATCH"
 mkdir -p "$PROJECT_DIR/out/p1"
 PREFIX="$PROJECT_DIR/out/p1/v${SPEED}_stop${STOP}_run${RUN}"
