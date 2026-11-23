@@ -182,9 +182,15 @@ main(int argc, char* argv[])
 
     WifiHelper wifi;
     wifi.SetStandard((standard == "11g") ? WIFI_STANDARD_80211g : WIFI_STANDARD_80211a);
+    // PHY modes are band-dependent in ns-3.48: 802.11g / 2.4 GHz must
+    // use ERP-OFDM, whereas 802.11a / 5 GHz uses OFDM.
+    // The initial P0 checked management frames only, so it did not reveal
+    // the invalid data-rate mode that caused the first P1 UDP run to abort.
+    const std::string phyMode =
+        (standard == "11g") ? "ErpOfdmRate6Mbps" : "OfdmRate6Mbps";
     wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
-                                 "DataMode", StringValue("OfdmRate6Mbps"),
-                                 "ControlMode", StringValue("OfdmRate6Mbps"));
+                                 "DataMode", StringValue(phyMode),
+                                 "ControlMode", StringValue(phyMode));
 
     YansWifiPhyHelper phy;
     phy.SetChannel(channel);
