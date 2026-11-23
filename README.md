@@ -23,6 +23,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P2 — matriz completa de 12 simulações, run=1](docs/15_resultados_matriz_12_cenarios_run1.md)
 - [P2 — resultados estatísticos das 10 runs e IC95%](docs/16_resultados_estatisticos_10_runs.md)
 - [B10 — aproveitamento do contacto Wi-Fi e robustez ao deslocar AP](docs/17_contact_utilisation_and_ap_robustness.md)
+- [B10 — auditoria dos 120 contactos e piloto AP ±30 m](docs/18_auditoria_contacto_wifi_e_robustez_piloto.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -161,11 +162,24 @@ python3 scripts/plot_paired_statistics.py --input out/p2/paired_statistics.csv -
 
 Produz `comov_entrega_media_politicas.png`, `comov_ganho_fifo_ic95.png` e `comov_fifo_overflow_expiracao.png`. O IC95% do segundo gráfico refere-se à **diferença FIFO−imediato**, não às taxas médias individuais. Para média e P95 de atrasos nas 10 runs serão necessários os CSV `*_received.csv`, não incluídos no ficheiro estatístico agregado.
 
+## Conclusão da análise de contacto — resultados verificados
+
+Foram recebidos e auditados os três CSV de contacto relativos às **120 execuções** e o resumo do piloto AP deslocado (8 novas simulações, run=1). Resultado do objetivo principal: **a FIFO entrega mais payload útil por segundo de associação em todos os seis cenários**.
+
+- A 5 m/s, goodput útil no prazo de 1,410/1,302/1,173 Mbit/s na FIFO, contra 0,784/0,786/0,790 com envio imediato, para paragens 0/10/30 s;
+- A 15 m/s, 2,712/1,985/1,474 Mbit/s na FIFO, contra 0,753/0,771/0,783 com envio imediato;
+- Atraso médio FIFO de 7,53 a 26,99 s consoante velocidade e paragem, face a aproximadamente 1,5 ms de imediato;
+- Piloto AP ±30 m e v=15 m/s, s=0/30 s: ganho de +3997 mensagens em cada par deslocado (run=1), mas diferenças de até 401 descartes por overflow entre −30 e +30 m na paragem de 30 s.
+
+**Goodput por segundo associado não mede ocupação do canal PHY.** Os IC95% estatísticos aplicam-se à matriz AP central, com 10 runs. O teste de deslocação do AP ainda tem apenas uma run e não permite generalização a canais urbanos.
+
+Ver [auditoria dos resultados](docs/18_auditoria_contacto_wifi_e_robustez_piloto.md) para tabelas, IC95%, tempos e proveniência.
+
 ## Próxima fase: objetivo central — usar melhor o contacto Wi-Fi
 
 **Aim:** *Find out whether storing data on the bus makes better use of Wi-Fi contact at a stop.*
 
-As 120 simulações com AP em x=0 já estão concluídas e **não precisam de ser repetidas**. Para medir melhor o aproveitamento do contacto, agregar os CSV de receção e de associação, calculando bytes úteis recebidos no prazo por segundo de associação e atraso das mensagens recebidas:
+As 120 simulações com AP em x=0 estão concluídas e o **contacto útil já foi calculado e auditado**. Os comandos seguintes apenas permitem reproduzir a análise com os CSV existentes:
 
 ~~~bash
 python3 scripts/test_p2_contact.py
@@ -175,7 +189,7 @@ python3 scripts/plot_p2_contact.py --input out/p2/contact_metrics_summary.csv --
 
 Isto produz `contact_metrics_runs.csv` (120 execuções), `contact_metrics_summary.csv` (12 grupos), `contact_metrics_pairs.csv` (6 diferenças emparelhadas e IC95%) e duas figuras. **Goodput útil por segundo de associação não representa ocupação PHY do canal.**
 
-Só depois de inspecionar essas métricas, experimentar AP em x=−30/+30 m para v=15 m/s e paragens 0/30 s, numa run inicial (8 simulações **novas**, com prefixos independentes):
+O piloto AP ±30 m para v=15 m/s e paragens 0/30 s **já foi executado** com run=1. O comando seguinte reproduz esses ensaios ou revalida as oito execuções existentes, com prefixos independentes:
 
 ~~~bash
 python3 scripts/run_p2_ap_robustness.py ../../ns-3 --start-run 1 --end-run 1 --skip-existing
