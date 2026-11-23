@@ -112,5 +112,84 @@ class P1ValidatorTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
 
 
+    def test_contact_and_delivery_summary_column_regression(self):
+        # This would have caught the 'unique_received' vs 'received_unique'
+        # KeyError that occurred after the first successful P1 simulation.
+        with tempfile.TemporaryDirectory() as tmp:
+            prefix = Path(tmp) / "p1"
+            create_synthetic(prefix)
+
+            gen_path = Path(str(prefix) + "_generated.csv")
+            with gen_path.open(encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                headers = list(reader.fieldnames)
+                generated_rows = list(reader)
+            for seq in range(6000, 6010):
+                r = generated_rows[seq]
+                r["associated_at_generation"] = "1"
+                r["attempted_socket_send"] = "1"
+                r["send_return"] = "1000"
+                r["drop_reason"] = ""
+            with gen_path.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=headers)
+                writer.writeheader()
+                writer.writerows(generated_rows)
+
+            # 10 accepted by the socket; 8 uniquely received; 2 not observed.
+            with Path(str(prefix) + "_received.csv").open(
+                "a", encoding="utf-8", newline=""
+            ) as f:
+                writer = csv.writer(f)
+                for seq in range(6000, 6008):
+                    t_gen = 10.0 + seq / 100.0
+                    writer.writerow([
+                        seq, f"{t_gen:.9f}", f"{t_gen + 0.001:.9f}",
+                        "0.001000000", 1, 0, 1
+                    ])
+
+            # Complete association state transition around generation times.
+            assoc_at = 69.999
+            deassoc_at = 70.100
+            x_at_assoc = 5.0 * (assoc_at - 70.0)
+            ap_mac = "00:00:00:00:00:01"
+            with Path(str(prefix) + "_association.csv").open(
+                "a", encoding="utf-8", newline=""
+            ) as f:
+                writer = csv.writer(f)
+                writer.writerow([assoc_at, "assoc", ap_mac, x_at_assoc,
+                                 math.hypot(x_at_assoc, 1.5)])
+                writer.writerow([deassoc_at, "deassoc", ap_mac, 0, 1.5])
+
+            summary_path = Path(str(prefix) + "_summary.csv")
+            with summary_path.open(encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                summary_fields = list(reader.fieldnames)
+                summary = next(reader)
+            summary.update({
+                "drop_no_association": "11990",
+                "socket_accepted": "10",
+                "received_unique": "8",
+                "received_on_time": "8",
+                "not_observed_after_socket_accept": "2",
+                "assoc_events": "1",
+                "deassoc_events": "1",
+                "associated_duration_s": "0.101",
+            })
+            with summary_path.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=summary_fields)
+                writer.writeheader()
+                writer.writerow(summary)
+
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/review_p1.py"),
+                 "--prefix", str(prefix), "--require-contact"],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            self.assertIn("8 unique received", result.stdout)
+            self.assertIn("PASS: P1 CSV accounting", result.stdout)
+            self.assertTrue(Path(str(prefix) + "_analysis.json").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

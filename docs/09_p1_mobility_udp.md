@@ -117,3 +117,7 @@ O ns-3 pode manter a associação durante um intervalo após perda de capacidade
 ## Incidente de integração P1 — primeira execução
 
 Na primeira execução do utilizador (`bash scripts/run_p1.sh ../../ns-3 5 10`), o programa **compilou** mas abortou em t=46,959028 s. Diagnóstico confirmado no ns-3.48, `wifi-tx-vector.cc:529`: `OfdmRate6Mbps` (classe OFDM) não é modo de dados válido na banda de 2,4 GHz para o standard 802.11g. Correção: `DataMode` e `ControlMode` passam a `ErpOfdmRate6Mbps` (classe ERP-OFDM). O P0 anterior não encontrou o problema porque não enviou dados UDP. Não existem ainda resultados UDP P1 válidos. Após integrar a correção, recompilar e repetir; a mensagem `PASS` do validador e os CSV deverão ser enviados para revisão.
+
+## Estado após correção ERP-OFDM
+
+A simulação inicial do caso v=5 m/s, paragem 10 s **terminou com sucesso** no WSL, reportando 12 000 mensagens geradas, 5 720 datagramas aceites pela socket, 5 620 entregas únicas e 57,2001 s de associação. A validação independente falhou por discrepância nos nomes de coluna do CSV (Python: unique_received; C++: received_unique), não por falha do simulador. Consultar [primeiro relatório](10_resultados_p1_piloto_v5_stop10.md). Repetir **apenas o verificador Python** após integração da correção.
