@@ -13,7 +13,7 @@ bash scripts/run_p0.sh ../../ns-3
 - Instalação utilizada: `/home/gb/COMOV/ns-3`, versão 3.48.
 - Output original fornecido em conversa: `p0_11g.csv`.
 - SHA-256 do CSV recebido: `5717bbfe69b644b69294cd485b26271601b042f8eac48145040f1d9b46f1ee3a`.
-- Parâmetros: IEEE 802.11g, f=2,412 GHz, 20 dBm, OFDM 6 Mbit/s, n=3, d0=1 m, `ReferenceLoss=40,095329 dB`, alturas AP=4m/STA=2,5m.
+- Parâmetros da **execução original**: IEEE 802.11g, f=2,412 GHz, 20 dBm, `DataMode=OfdmRate6Mbps` (posteriormente identificado como **incompatível com a banda para frames de dados**, mas não exercitado pelo P0), n=3, d0=1 m, `ReferenceLoss=40,095329 dB`, alturas AP=4m/STA=2,5m. A versão corrigida configura `ErpOfdmRate6Mbps`.
 - Separações horizontais analisadas: 0, 5, 10, 20, 50, 100, 200 m.
 
 ## Resultados observados
@@ -51,3 +51,7 @@ Correções na branch `fix/b10-p0-csv-validation`:
 ### Próxima etapa
 
 Piloto P1: implementar mobilidade contínua no eixo da estrada e gerar UDP 100 mensagens/s (1000 bytes, ID no instante de geração) durante a janela [10,130) s. Medir associações reais, receções e mensagens enviadas enquanto o veículo atravessa a região de cobertura, primeiro **sem buffer**. Variar velocidade e duração de paragem só depois de validar um único caso.
+
+## Nota de correção PHY após a primeira execução P1
+
+O P0 original **não verificou a transmissão de dados com o modo PHY selecionado**, apenas cálculos de propagação e receção de frames de gestão. Ao tentar enviar UDP no P1, a versão inicial abortou em t=46,959028 s (`Cannot use OFDM modulation class in the 2.4 GHz band`). O modo corrigido para o standard 802.11g é `ErpOfdmRate6Mbps`. O estudo de RSS do P0 não é invalidado por esta correção, mas **deve ser repetido** para confirmar que a alteração do modo não trouxe regressões.
