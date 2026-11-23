@@ -18,7 +18,7 @@ Legendas: **OBR.** = imposto; **PROP.** = proposto por nós e ainda não validad
 | IC diferenças | 95%, emparelhado | OBR. | Método comum |
 | Norma referência | 802.11g, 2,412 GHz, 20 MHz | PROP. | Ensaiar como baseline; não é uma exigência de B10 |
 | Estudo complementar | 802.11a, 5,180 GHz, 20 MHz | PROP. | Comparação de bandas **e** normas, não isolar apenas efeito MAC |
-| PHY | taxa fixa 6 Mbit/s | PROP. | Modo OFDM compatível a confirmar na versão ns-3 |
+| PHY | taxa fixa 6 Mbit/s | PROP. | 802.11g/2,4 GHz: `ErpOfdmRate6Mbps`; 802.11a/5 GHz: `OfdmRate6Mbps` — distinção exigida pelo ns-3.48 |
 | Potência TX | 20 dBm | PROP. | Exemplo inicial para orçamento rádio, verificar viabilidade/restrições |
 | Antenas | Gt=Gr=0 dBi, perdas de sistema=0 dB | PROP. | Simplificação explicitada, não ganho medido |
 | AP/STA altura | 4,0 / 2,5 m | PROP. | Separação vertical 1,5 m em trajetória 3D |
