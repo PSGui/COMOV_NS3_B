@@ -79,7 +79,9 @@ Em ns-3.48, com Pt=20 dBm, f=2,412 GHz, d0=1 m, n=3, para d≥1 m:
 - Na geração da primeira mensagem não observada (d≈115,760 m): **−82,002 dBm**.
 - Na desassociação (d≈120,713 m): **−82,548 dBm**.
 
-Esta sequência é consistente com **uma fronteira prática de receção perto de −82 dBm para este conjunto de definições**. É uma inferência ligada **à configuração específica**, não uma medição de sensibilidade nominal ou um limiar universal de Wi-Fi. Confirmar por trace PHY/MAC antes de sustentar uma causa exata.
+Esta sequência coincide com um detalhe **documentado no código-fonte do ns-3.48**: `ThresholdPreambleDetectionModel::MinimumRssi` tem valor por omissão **−82 dBm** e a deteção do preâmbulo também exige SNR ≥4 dB. O exemplo oficial `examples/wireless/wifi-simple-infra.cc` indica que o helper Wi-Fi instala esse modelo por omissão. Portanto, **a explicação mais provável para o corte abrupto das receções é esse limiar de deteção**, dado que a última receção ocorreu com potência prevista ≈−81,997 dBm e a primeira ausência de receção com ≈−82,002 dBm. A confirmação completa de que este foi o motivo de cada falha requer traces PHY específicos. O valor não é uma sensibilidade universal de 802.11g nem um limiar imposto pelo enunciado.
+
+**Fontes ns-3.48:** [threshold-preamble-detection-model.h](https://fossies.org/linux/privat/ns-3.48.tar.bz2/ns-3.48/src/wifi/model/threshold-preamble-detection-model.h), [threshold-preamble-detection-model.cc](https://fossies.org/linux/privat/ns-3.48.tar.bz2/ns-3.48/src/wifi/model/threshold-preamble-detection-model.cc), [wifi-simple-infra.cc](https://fossies.org/linux/privat/ns-3.48.tar.bz2/ns-3.48/examples/wireless/wifi-simple-infra.cc).
 
 ## Interpretação científica
 
