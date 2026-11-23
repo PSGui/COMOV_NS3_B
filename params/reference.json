@@ -4,7 +4,7 @@
   "simulator": {
     "name": "ns-3",
     "version": "3.48",
-    "version_status": "P0 compilou; P1 compilou mas primeira execução abortou (DataMode OFDM inválido para 2,4 GHz); correção ERP-OFDM pendente de teste"
+    "version_status": "P0 e P1 compilados e validados no WSL; P2 implementado, ainda sem compilação/execução no WSL"
   },
   "scenario": {
     "ap_position_m": [
@@ -46,11 +46,16 @@
     "buffer_max_bytes": 4000000,
     "buffer_counting": "bytes de payload da aplicacao",
     "on_overflow": "drop_newest",
-    "flush_pacing_ms": null,
-    "flush_pacing_status": "definir_e_congelar_no_piloto",
+    "flush_pacing_ms": 2,
+    "flush_pacing_status": "piloto_P2_provisorio; taxa de aplicacao 4Mbps; validar congestionamento antes de congelar",
     "immediate_when_not_associated": "drop_at_application; no UDP SendTo, no application queue",
     "immediate_socket_success_semantics": "accepted_by_UDP_IP_only; not evidence of radio delivery",
-    "immediate_policy_status": "provisorio_P1; comparar com interpretacao do docente antes de M2"
+    "immediate_policy_status": "provisorio_P1; comparar com interpretacao do docente antes de M2",
+    "buffer_expiry_s": 60,
+    "expiry_policy": "descartar_na_fila_ao_completar_60s_desde_geracao",
+    "buffer_fifo_order": "por_instante_de_geracao_e_sequencia",
+    "buffer_socket_accepted": "remover_da_fila_ao_chamar_SendTo; sem_retransmissao_aplicacional_de_UDP",
+    "p2_policies_in_same_cpp": "src/b10-p2-buffer-compare.cc --policy=immediate|fifo"
   },
   "simulation": {
     "warmup_start_s": 0,
