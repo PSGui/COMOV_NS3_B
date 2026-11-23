@@ -16,3 +16,5 @@ jobs:
         run: python3 scripts/test_p1_validation.py
       - name: Validate P2 FIFO analyser fixtures
         run: python3 scripts/test_p2_validation.py
+      - name: Validate P2 paired-comparison analysis
+        run: python3 scripts/test_p2_comparison.py
