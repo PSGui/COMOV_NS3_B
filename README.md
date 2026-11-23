@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** planeamento e cálculos teóricos. **O código P0 para ns-3.48 já existe, mas ainda não foi compilado/executado no WSL nem existem resultados experimentais confirmados.** Os parâmetros não impostos no enunciado são provisórios até M2.
+> **Estado atual:** P0 compilado e executado pelo grupo em ns-3.48 (modelo log-distance e RSS estático verificados). Ainda não existem resultados UDP, mobilidade contínua ou buffer. Os parâmetros não impostos no enunciado são provisórios até M2.
 
 ## Navegação
 
@@ -14,6 +14,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [12 simulações obrigatórias, pilotos e robustez](docs/04_matriz_simulacoes.md)
 - [Validação independente dos CSV do preflight](docs/05_validacao_preflight.md)
 - [P0 — propagação no ns-3.48 e execução no WSL](docs/07_p0_ns3_48.md)
+- [P0 — resultados observados, limites e correção de CSV](docs/08_resultados_p0_11g.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
 - [Calculadora independente e geração de matriz CSV](scripts/preflight.py)
@@ -57,4 +58,4 @@ git pull
 bash scripts/run_p0.sh /caminho/para/ns-3.48
 ```
 
-O caminho tem de apontar para a instalação real do simulador. O script cria `out/p0/p0_11g.csv` e verifica independentemente as diferenças teóricas; compilação ainda não testada nesta fase.
+O caminho tem de apontar para a instalação real do simulador. O script cria `out/p0/p0_11g.csv` e valida os resultados. P0 já compilou no WSL; a correção posterior do formato CSV exige nova execução. Para criar gráficos opcionais (requer `matplotlib`): `python3 scripts/plot_p0.py --input out/p0/p0_11g.csv --output-dir out/p0`.
