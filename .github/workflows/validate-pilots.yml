@@ -20,3 +20,7 @@ jobs:
         run: python3 scripts/test_p2_comparison.py
       - name: Validate P2 paired Student-t confidence intervals
         run: python3 scripts/test_p2_statistics.py
+      - name: Validate B10 Wi-Fi contact analysis and AP robustness naming
+        run: python3 scripts/test_p2_contact.py
+      - name: Check ns-3 runner shell syntax
+        run: bash -n scripts/run_p2.sh

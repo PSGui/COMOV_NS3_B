@@ -1,6 +1,6 @@
 {
   "_schema_note": "Valores obrigatorios = enunciado B10; restantes valores provisórios para piloto. Não constitui configuração validada do ns-3.",
-  "status": "provisorio_nao_validado",
+  "status": "baseline_P2_120_simulacoes_validada_ns3; validacao_em_campo_pendente",
   "simulator": {
     "name": "ns-3",
     "version": "3.48",
@@ -217,7 +217,8 @@
         "ci95_low_pp": 33.319,
         "ci95_high_pp": 33.331
       }
-    ]
+    ],
+    "expiry_policy_status": "FIFO usada na matriz elimina mensagens aos 60s ainda em fila; difere da hipotese inicial sem expiracao, nao extrapolar"
   },
   "simulation": {
     "warmup_start_s": 0,
@@ -270,6 +271,30 @@
       "sem_aceleracao_fisica",
       "sem_handover",
       "sem_rede_celular"
-    ]
+    ],
+    "contact_utilization_metric": "goodput_on_time_mbps = 8*1000*N_unique_received_on_time / (1e6*MAC_associated_seconds); app payload only, not PHY airtime",
+    "contact_metric_status": "scripts/analyze_p2_contact.py criado; pendente execucao nos 120 CSV de out/p2",
+    "ap_robustness_setup": {
+      "ap_x_m": [
+        -30,
+        0,
+        30
+      ],
+      "new_test_positions_m": [
+        -30,
+        30
+      ],
+      "reference_position_m": 0,
+      "speeds_mps": [
+        15
+      ],
+      "stop_durations_s": [
+        0,
+        30
+      ],
+      "initial_runs": 1,
+      "new_simulations": 8,
+      "status": "scripts/run_p2_ap_robustness.py criado; pendente execucao em WSL"
+    }
   }
 }

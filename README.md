@@ -22,6 +22,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P2 — sensibilidade a pacing e velocidade: 21 CSV auditados](docs/14_sensibilidade_pacing_velocidade.md)
 - [P2 — matriz completa de 12 simulações, run=1](docs/15_resultados_matriz_12_cenarios_run1.md)
 - [P2 — resultados estatísticos das 10 runs e IC95%](docs/16_resultados_estatisticos_10_runs.md)
+- [B10 — aproveitamento do contacto Wi-Fi e robustez ao deslocar AP](docs/17_contact_utilisation_and_ap_robustness.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -159,3 +160,25 @@ python3 scripts/plot_paired_statistics.py --input out/p2/paired_statistics.csv -
 ~~~
 
 Produz `comov_entrega_media_politicas.png`, `comov_ganho_fifo_ic95.png` e `comov_fifo_overflow_expiracao.png`. O IC95% do segundo gráfico refere-se à **diferença FIFO−imediato**, não às taxas médias individuais. Para média e P95 de atrasos nas 10 runs serão necessários os CSV `*_received.csv`, não incluídos no ficheiro estatístico agregado.
+
+## Próxima fase: objetivo central — usar melhor o contacto Wi-Fi
+
+**Aim:** *Find out whether storing data on the bus makes better use of Wi-Fi contact at a stop.*
+
+As 120 simulações com AP em x=0 já estão concluídas e **não precisam de ser repetidas**. Para medir melhor o aproveitamento do contacto, agregar os CSV de receção e de associação, calculando bytes úteis recebidos no prazo por segundo de associação e atraso das mensagens recebidas:
+
+~~~bash
+python3 scripts/test_p2_contact.py
+python3 scripts/analyze_p2_contact.py --input-dir out/p2 --output-dir out/p2 --start-run 1 --end-run 10
+python3 scripts/plot_p2_contact.py --input out/p2/contact_metrics_summary.csv --output-dir out/p2
+~~~
+
+Isto produz `contact_metrics_runs.csv` (120 execuções), `contact_metrics_summary.csv` (12 grupos), `contact_metrics_pairs.csv` (6 diferenças emparelhadas e IC95%) e duas figuras. **Goodput útil por segundo de associação não representa ocupação PHY do canal.**
+
+Só depois de inspecionar essas métricas, experimentar AP em x=−30/+30 m para v=15 m/s e paragens 0/30 s, numa run inicial (8 simulações **novas**, com prefixos independentes):
+
+~~~bash
+python3 scripts/run_p2_ap_robustness.py ../../ns-3 --start-run 1 --end-run 1 --skip-existing
+~~~
+
+O protocolo e as ressalvas estão em [docs/17_contact_utilisation_and_ap_robustness.md](docs/17_contact_utilisation_and_ap_robustness.md). A política FIFO simulada **expira mensagens na fila aos 60 s**: não confundir com uma política que transmita mensagens já fora do prazo.
