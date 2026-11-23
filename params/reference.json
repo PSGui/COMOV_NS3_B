@@ -4,7 +4,7 @@
   "simulator": {
     "name": "ns-3",
     "version": "3.48",
-    "version_status": "P0 e P1 validados; P2: 5mps/10s immediate/FIFO2 e FIFO3; 15mps/10s immediate/FIFO2 validados; falta matriz 0s/30s e runs2-10"
+    "version_status": "P0 e P1 validados; P2 matriz inicial 12/12 cenarios (2 velocidades x 3 paragens x 2 politicas), run1 validada pelo grupo; faltam runs2-10/IC95"
   },
   "scenario": {
     "ap_position_m": [
@@ -109,7 +109,64 @@
         "mean_latency_s": 22.88105116,
         "p95_latency_s": 49.75199011
       }
-    }
+    },
+    "p2_matrix_run1_status": "12 cenarios validadores PASS; 8 novos e 4 reutilizados; resultados comparados em 6 pares",
+    "p2_matrix_run1": [
+      {
+        "speed_mps": 5,
+        "stop_s": 0,
+        "immediate_on_time": 4620,
+        "fifo_on_time": 8312,
+        "fifo_expired": 3589,
+        "fifo_overflow": 0,
+        "fifo_peak_bytes": 3695000
+      },
+      {
+        "speed_mps": 5,
+        "stop_s": 10,
+        "immediate_on_time": 5620,
+        "fifo_on_time": 9312,
+        "fifo_expired": 2585,
+        "fifo_overflow": 0,
+        "fifo_peak_bytes": 3695000
+      },
+      {
+        "speed_mps": 5,
+        "stop_s": 30,
+        "immediate_on_time": 7620,
+        "fifo_on_time": 11312,
+        "fifo_expired": 589,
+        "fifo_overflow": 0,
+        "fifo_peak_bytes": 3695000
+      },
+      {
+        "speed_mps": 15,
+        "stop_s": 0,
+        "immediate_on_time": 1533,
+        "fifo_on_time": 5530,
+        "fifo_expired": 4000,
+        "fifo_overflow": 2374,
+        "fifo_peak_bytes": 4000000
+      },
+      {
+        "speed_mps": 15,
+        "stop_s": 10,
+        "immediate_on_time": 2533,
+        "fifo_on_time": 6530,
+        "fifo_expired": 4000,
+        "fifo_overflow": 1371,
+        "fifo_peak_bytes": 4000000
+      },
+      {
+        "speed_mps": 15,
+        "stop_s": 30,
+        "immediate_on_time": 4533,
+        "fifo_on_time": 8530,
+        "fifo_expired": 2135,
+        "fifo_overflow": 1239,
+        "fifo_peak_bytes": 4000000
+      }
+    ]
   },
   "simulation": {
     "warmup_start_s": 0,
