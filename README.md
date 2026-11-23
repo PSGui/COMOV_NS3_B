@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 validado; P1 simulado e auditado nos cinco CSV para 5 m/s e 10 s de paragem. P2 (envio imediato vs FIFO de 4 MB, drop-newest, expiração aos 60 s e pacing-piloto de 2 ms) implementado no repositório, **mas ainda não compilado/executado em ns-3.48**.
+> **Estado atual:** P0 validado; P1 compilado e executado com sucesso no ns-3.48 (5 m/s, paragem 10 s). Validação Python passou e os cinco CSV foram auditados independentemente, incluindo identificação dos 100 datagramas aceites e não recebidos. Sem testes FIFO até esta fase.
 
 ## Navegação
 
@@ -18,6 +18,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P1 — mobilidade contínua, associação e UDP](docs/09_p1_mobility_udp.md)
 - [P1 — primeiros resultados do caso 5 m/s e paragem 10 s](docs/10_resultados_p1_piloto_v5_stop10.md)
 - [P2 — implementação e validação proposta do buffer FIFO](docs/12_p2_fifo_comparacao.md)
+- [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
 - [Calculadora independente e geração de matriz CSV](scripts/preflight.py)
