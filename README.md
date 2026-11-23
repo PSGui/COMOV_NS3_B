@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 validado; P1 agora compila e termina no ns-3.48 (5 m/s e 10 s de paragem). Primeiros contadores UDP disponíveis; o validador Python tinha um erro de nome de coluna, agora corrigido, pelo que **a auditoria dos CSV continua pendente**. Ainda não há testes FIFO.
+> **Estado atual:** P0 validado; P1 simulado e auditado nos cinco CSV para 5 m/s e 10 s de paragem. P2 (envio imediato vs FIFO de 4 MB, drop-newest, expiração aos 60 s e pacing-piloto de 2 ms) implementado no repositório, **mas ainda não compilado/executado em ns-3.48**.
 
 ## Navegação
 
@@ -17,6 +17,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P0 — resultados observados, limites e correção de CSV](docs/08_resultados_p0_11g.md)
 - [P1 — mobilidade contínua, associação e UDP](docs/09_p1_mobility_udp.md)
 - [P1 — primeiros resultados do caso 5 m/s e paragem 10 s](docs/10_resultados_p1_piloto_v5_stop10.md)
+- [P2 — implementação e validação proposta do buffer FIFO](docs/12_p2_fifo_comparacao.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
 - [Calculadora independente e geração de matriz CSV](scripts/preflight.py)
@@ -102,3 +103,19 @@ python3 scripts/plot_p1.py --prefix out/p1/v5_stop10_run1
 ~~~
 
 Foi corrigido o nome `received_unique` da coluna no CSV de resumo. A execução C++ reportou 12 000 mensagens geradas, 5 720 aceites na socket e 5 620 recebidas; falta confirmar todos os registos de aplicação e associação no verificador. Ver [resultados provisórios](docs/10_resultados_p1_piloto_v5_stop10.md).
+
+## P2 — primeiro par de simulações (por validar)
+
+Depois do merge do PR P2:
+
+~~~bash
+cd ~/COMOV/Project_B/COMOV_NS3_B
+git pull
+python3 scripts/test_p2_validation.py
+bash scripts/run_p2.sh ../../ns-3 immediate 5 10
+bash scripts/run_p2.sh ../../ns-3 fifo 5 10
+python3 scripts/compare_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate --fifo-prefix out/p2/v5_stop10_run1_fifo
+python3 scripts/plot_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate --fifo-prefix out/p2/v5_stop10_run1_fifo --output-dir out/p2
+~~~
+
+O mesmo simulador P2 executa as duas políticas, com o mesmo seed/run. O validador reconstrói as operações de FIFO e distingue geração, submissão UDP e chegada ao AP. O resultado só será conclusivo após a compilação no WSL e a revisão dos CSV. Mais detalhes em [docs/12_p2_fifo_comparacao.md](docs/12_p2_fifo_comparacao.md).
