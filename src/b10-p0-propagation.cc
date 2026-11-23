@@ -124,6 +124,11 @@ WriteCsv(const std::string& filename,
             const double avg = s.signalSumDbm / s.decodedFrames;
             file << avg << ',' << (avg - s.modelPrDbm);
         }
+        else
+        {
+            // Preserve both empty CSV columns (RSS and PHY-minus-model).
+            file << ',';
+        }
         // Empty RSS fields mean that the STA did not decode Wi-Fi frames
         // during the stationary part of this interval.
         file << '\n';
