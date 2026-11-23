@@ -4,7 +4,7 @@
   "simulator": {
     "name": "ns-3",
     "version": "3.48",
-    "version_status": "confirmada_pelo_grupo; compilacao_dos_ficheiros_P0_ainda_pendente"
+    "version_status": "P0 compilado e validado no WSL; codigo P1 escrito, execucao ainda pendente"
   },
   "scenario": {
     "ap_position_m": [
@@ -47,7 +47,10 @@
     "buffer_counting": "bytes de payload da aplicacao",
     "on_overflow": "drop_newest",
     "flush_pacing_ms": null,
-    "flush_pacing_status": "definir_e_congelar_no_piloto"
+    "flush_pacing_status": "definir_e_congelar_no_piloto",
+    "immediate_when_not_associated": "drop_at_application; no UDP SendTo, no application queue",
+    "immediate_socket_success_semantics": "accepted_by_UDP_IP_only; not evidence of radio delivery",
+    "immediate_policy_status": "provisorio_P1; comparar com interpretacao do docente antes de M2"
   },
   "simulation": {
     "warmup_start_s": 0,
