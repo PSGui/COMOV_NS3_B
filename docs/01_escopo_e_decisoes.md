@@ -50,3 +50,11 @@ Métricas obrigatórias B10: bytes úteis únicos por passagem, entregas até 60
 8. Gerar figuras, relatório, README de reprodução e apresentação.
 
 **Regra:** valores que dão resultados interessantes não são, por si só, fundamento para escolher parâmetros.
+
+## Atualização de implementação — 23/11/2026
+
+O estado do cabeçalho e as hipóteses acima documentam **o planeamento inicial**, anterior às execuções. O projeto completou posteriormente P0, P1 e P2 e **120 simulações de referência** com resultados emparelhados e IC95% (ver documentos 15 e 16).
+
+Uma diferença de implementação tem de ficar clara: a FIFO atualmente executada **expira cada mensagem ainda na fila ao completar 60 s desde a geração**; portanto não corresponde à variante inicialmente prevista que conservaria mensagens para permitir entregas tardias. Essa outra variante não foi testada. A métrica de entregas tardias permanece registada no AP, mas a política atual limita intencionalmente as tentativas de enviar mensagens já expiradas.
+
+A etapa seguinte mantém o objetivo original **“Find out whether storing data on the bus makes better use of Wi-Fi contact at a stop.”** Para além da taxa de entrega sobre mensagens geradas, analisará bytes úteis recebidos por segundo efetivo de associação, atraso, expiração e robustez da geometria do AP. Ver [protocolo atualizado](17_contact_utilisation_and_ap_robustness.md).
