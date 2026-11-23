@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 compilado e validado no WSL (ns-3.48). O código de P1 com mobilidade, associação e UDP está preparado para teste; **ainda não foi executado/validado no WSL**. Não existem ainda resultados do buffer. Parâmetros propostos aguardam M2.
+> **Estado atual:** P0 validou a propagação no WSL (ns-3.48). O P1 compilou, mas a primeira execução abortou por selecionar `OfdmRate6Mbps` (5 GHz) num cenário 802.11g (2,4 GHz). Corrigido para `ErpOfdmRate6Mbps`; **é necessário repetir P1 para o validar**. Não existem ainda resultados P1 completos nem resultados do buffer.
 
 ## Navegação
 
@@ -77,3 +77,14 @@ O comando gera 12 000 mensagens de 1000 bytes entre 10 e 130 s, sem armazenament
 ~~~bash
 python3 scripts/test_p1_validation.py
 ~~~
+
+## Correção do modo PHY após falha na primeira execução P1
+
+Para IEEE 802.11g (2,4 GHz), usar `ErpOfdmRate6Mbps`; para IEEE 802.11a (5 GHz), `OfdmRate6Mbps`. O P0 inicial não enviou datagramas UDP, pelo que a incompatibilidade só se manifestou no P1 (t=46,959028 s). Depois de integrar a correção, correr novamente:
+
+~~~bash
+git pull
+bash scripts/run_p1.sh ../../ns-3 5 10
+~~~
+
+O `run_p1.sh` copia sempre a versão atualizada do programa para o `scratch/` do ns-3 antes de o executar.
