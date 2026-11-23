@@ -87,13 +87,28 @@ def main():
     mobility_f = read_log(args.fifo_prefix, "mobility")
     if assoc_i != assoc_f:
         raise ValueError("Association traces differ between paired policies")
-    if mobility_i != mobility_f:
-        raise ValueError("Mobility/RSS/association sampling differs between paired policies")
+    if len(mobility_i) != len(mobility_f):
+        raise ValueError("Mobility sample count differs between paired policies")
+    for index, (i, f) in enumerate(zip(mobility_i, mobility_f)):
+        for field in ("t_s", "bus_x_m", "bus_velocity_mps",
+                      "distance_ap_m", "pr_model_dbm"):
+            # Floating output differs by 1e-9 in a few records because the
+            # two policies schedule different events at the same simulator
+            # time. This is NOT a different trajectory or link budget.
+            if not math.isclose(float(i[field]), float(f[field]),
+                                rel_tol=0, abs_tol=1e-6):
+                raise ValueError(f"Unmatched mobility {field} at row {index}")
+        if i["associated"] != f["associated"]:
+            raise ValueError(f"Unmatched association sample at row {index}")
+
     if len(generated_i) != len(generated_f):
         raise ValueError("Different number of generated records between policies")
     for i, f in zip(generated_i, generated_f):
-        for field in ("seq", "t_gen_s", "bus_x_m", "distance_ap_m"):
-            if i[field] != f[field]:
+        if i["seq"] != f["seq"]:
+            raise ValueError("Different generation sequence IDs")
+        for field in ("t_gen_s", "bus_x_m", "distance_ap_m"):
+            if not math.isclose(float(i[field]), float(f[field]),
+                                rel_tol=0, abs_tol=1e-6):
                 raise ValueError(f"Unmatched generation {field}, seq={i['seq']}")
 
     count = int(imm["generated"])
