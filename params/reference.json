@@ -4,7 +4,7 @@
   "simulator": {
     "name": "ns-3",
     "version": "3.48",
-    "version_status": "P0 e P1 validados no WSL; P2 par immediate/fifo v=5mps stop=10s executado no ns-3.48 e 14 CSV auditados"
+    "version_status": "P0 e P1 validados; P2: 5mps/10s immediate/FIFO2 e FIFO3; 15mps/10s immediate/FIFO2 validados; falta matriz 0s/30s e runs2-10"
   },
   "scenario": {
     "ap_position_m": [
@@ -47,7 +47,7 @@
     "buffer_counting": "bytes de payload da aplicacao",
     "on_overflow": "drop_newest",
     "flush_pacing_ms": 2,
-    "flush_pacing_status": "piloto_P2_2ms_executado_com_sucesso; robustez_3ms_e_v15_pendente; nao_congelado",
+    "flush_pacing_status": "2ms_baseline_provisoria; 3ms_5mps_stop10_run1_rendeu_mais_2_msgs_mas_aumentou_atraso; falta_variacao_entre_runs",
     "immediate_when_not_associated": "drop_at_application; no UDP SendTo, no application queue",
     "immediate_socket_success_semantics": "accepted_by_UDP_IP_only; not evidence of radio delivery",
     "immediate_policy_status": "provisorio_P1; comparar com interpretacao do docente antes de M2",
@@ -71,6 +71,44 @@
       "fifo_first_empty_s": 56.17467877,
       "fifo_p95_rx_latency_s": 33.19375713899999,
       "status": "analisado_CSV_real; sem IC95_statistico"
+    },
+    "p2_sensitivity_results": {
+      "v5_stop10_fifo_pace3": {
+        "seed": 1,
+        "run": 1,
+        "delivered_on_time": 9314,
+        "accepted_socket": 9415,
+        "overflow": 0,
+        "expired": 2585,
+        "peak_buffer_bytes": 3695000,
+        "first_queue_empty_s": 62.76867877,
+        "mean_latency_s": 10.464655359,
+        "p95_latency_s": 33.675607131
+      },
+      "v15_stop10_immediate": {
+        "seed": 1,
+        "run": 1,
+        "generated": 12000,
+        "socket_accepted": 2629,
+        "delivered_on_time": 2533,
+        "associated_seconds": 26.292264621
+      },
+      "v15_stop10_fifo_pace2": {
+        "seed": 1,
+        "run": 1,
+        "generated": 12000,
+        "enqueued": 10629,
+        "overflow": 1371,
+        "expired": 4000,
+        "socket_accepted": 6629,
+        "delivered_on_time": 6530,
+        "peak_buffer_bytes": 4000000,
+        "first_assoc_s": 62.386111762,
+        "deassoc_s": 88.678376383,
+        "first_queue_empty_s": 72.384111762,
+        "mean_latency_s": 22.88105116,
+        "p95_latency_s": 49.75199011
+      }
     }
   },
   "simulation": {
