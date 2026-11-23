@@ -26,6 +26,7 @@ Legendas: **OBR.** = imposto; **PROP.** = proposto por nós e ainda não validad
 | Shadowing/fading | ausente na baseline | PROP. | Limitação; robustez futura separada |
 | Sensibilidade e margem | por definir | PILOTO | Não confundir threshold RSS com taxa de entrega real |
 | Associação | gerida por StaWifiMac | OBR. | Registar associação/desassociação; não forçar o instante |
+| Imediato sem associação | descartar na aplicação antes de SendTo | PROP. | Impede fila pré-associação; hipótese de P1, declarar e validar antes de M2 |
 | Tempo de início da paragem | t=70 s | PROP. | Alinhamento temporal entre experiências |
 | Geração de mensagens | [10,130) s | PROP. | 120 s comuns; warm-up [0,10) s |
 | Observação final | t=200 s | PROP. | +70 s para concluir prazo de 60 s de toda a janela de geração |
