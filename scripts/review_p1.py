@@ -132,7 +132,8 @@ def main():
         "drop_no_association": decisions["no_association"],
         "socket_rejected": decisions["socket_rejected"],
         "socket_accepted": decisions["accepted"],
-        "unique_received": len(delivered),
+        # Match the field name written by the ns-3 C++ summary CSV.
+        "received_unique": len(delivered),
         "received_on_time": on_time,
         "received_late": late,
         "duplicate_rx": dupes,
