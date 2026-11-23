@@ -149,3 +149,13 @@ PY
 ~~~
 
 Faltam apresentação gráfica, estatísticas de atraso por cenário agregadas sobre 10 runs e análise de robustez. Os IC95% são condicionados ao modelo ns-3 usado (canal sem fading/shadowing), não à incerteza de uma estrada real.
+
+## Figuras finais a partir das 10 runs
+
+Após integrar o PR, basta executar o gerador sobre o ficheiro `paired_statistics.csv` já criado. **Não repetir as 120 simulações.**
+
+~~~bash
+python3 scripts/plot_paired_statistics.py --input out/p2/paired_statistics.csv --output-dir out/p2
+~~~
+
+Produz `comov_entrega_media_politicas.png`, `comov_ganho_fifo_ic95.png` e `comov_fifo_overflow_expiracao.png`. O IC95% do segundo gráfico refere-se à **diferença FIFO−imediato**, não às taxas médias individuais. Para média e P95 de atrasos nas 10 runs serão necessários os CSV `*_received.csv`, não incluídos no ficheiro estatístico agregado.
