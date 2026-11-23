@@ -3,8 +3,8 @@
   "status": "provisorio_nao_validado",
   "simulator": {
     "name": "ns-3",
-    "version": null,
-    "version_status": "definir_quando_ambiente_WSL_for_confirmado"
+    "version": "3.48",
+    "version_status": "confirmada_pelo_grupo; compilacao_dos_ficheiros_P0_ainda_pendente"
   },
   "scenario": {
     "ap_position_m": [
