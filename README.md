@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 e P1 validados no ns-3.48; P2 compilado e executado para um par emparelhado com v=5 m/s, paragem 10 s. Os 14 CSV foram auditados: a FIFO entregou 9312/12000 mensagens até 60 s, contra 5620/12000 no envio imediato (**+30,77 pontos percentuais**), com aumento do atraso médio. Pacing de 2 ms ainda provisório; faltam ensaios de robustez e repetições para inferência estatística.
+> **Estado atual:** P0 e P1 validados no ns-3.48; P2 testado com v=5 e 15 m/s, paragem de 10 s, políticas imediato/FIFO e sensibilidade de pacing 2/3 ms. A 15 m/s, FIFO entregou 6530/12000 mensagens vs 2533/12000 com envio imediato (+33,31 pontos percentuais), mas atingiu os 4 MB (1371 overflow, 4000 expiradas). Faltam paragens 0/30 s, repetições independentes e IC95%; os pilotos atuais são run=1.
 
 ## Navegação
 
@@ -19,6 +19,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P1 — primeiros resultados do caso 5 m/s e paragem 10 s](docs/10_resultados_p1_piloto_v5_stop10.md)
 - [P2 — implementação e validação proposta do buffer FIFO](docs/12_p2_fifo_comparacao.md)
 - [P2 — resultados verificados e auditoria do primeiro par](docs/13_auditoria_p2_par_v5_stop10.md)
+- [P2 — sensibilidade a pacing e velocidade: 21 CSV auditados](docs/14_sensibilidade_pacing_velocidade.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -120,7 +121,7 @@ python3 scripts/compare_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate
 python3 scripts/plot_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate --fifo-prefix out/p2/v5_stop10_run1_fifo --output-dir out/p2
 ~~~
 
-O mesmo simulador P2 executa as duas políticas, com o mesmo seed/run. O validador reconstrói as operações de FIFO e distingue geração, submissão UDP e chegada ao AP. A compilação e os CSV deste par já foram analisados: 12 000 geradas por política, 5 620 receções imediatas e 9 312 com FIFO; os restantes cenários ainda não foram executados. Mais detalhes em [docs/12_p2_fifo_comparacao.md](docs/12_p2_fifo_comparacao.md).
+O mesmo simulador P2 executa as duas políticas, com o mesmo seed/run. O validador reconstrói as operações de FIFO e distingue geração, submissão UDP e chegada ao AP. A compilação e os CSV deste par já foram analisados: 12 000 geradas por política, 5 620 receções imediatas e 9 312 com FIFO; o par adicional de 15 m/s e o controlo de pacing de 3 ms também foram executados; faltam paragens de 0 e 30 s e as repetições. Mais detalhes em [docs/12_p2_fifo_comparacao.md](docs/12_p2_fifo_comparacao.md).
 
 ### Diagnóstico aprofundado do P2
 
@@ -128,4 +129,25 @@ O mesmo simulador P2 executa as duas políticas, com o mesmo seed/run. O validad
 python3 scripts/compare_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate --fifo-prefix out/p2/v5_stop10_run1_fifo --output-json out/p2/v5_stop10_run1_pair_analysis.json
 ~~~
 
-O comparador confirma paridade das trajetórias e eventos de associação com tolerância para diferenças de arredondamento da ordem de 1e-9, lista as sequências de IDs aceites mas não observados, quantifica mensagens recuperadas pré-associação, atraso de cauda e instante de esvaziamento do FIFO. A auditoria completa está em [docs/13_auditoria_p2_par_v5_stop10.md](docs/13_auditoria_p2_par_v5_stop10.md). Próximo controlo: pacing 3 ms e, separadamente, velocidade 15 m/s; só depois bloquear parâmetros e avançar para as 12 condições ×10 runs.
+O comparador confirma paridade das trajetórias e eventos de associação com tolerância para diferenças de arredondamento da ordem de 1e-9, lista as sequências de IDs aceites mas não observados, quantifica mensagens recuperadas pré-associação, atraso de cauda e instante de esvaziamento do FIFO. A auditoria completa está em [docs/13_auditoria_p2_par_v5_stop10.md](docs/13_auditoria_p2_par_v5_stop10.md). Os controlos de pacing de 3 ms e velocidade de 15 m/s foram concluídos; falta comparar paragens 0 e 30 s e depois realizar ≥10 runs emparelhadas por cenário.
+
+## P2 — completar a matriz e calcular IC95%
+
+Executar as **quatro combinações velocidade/paragem ainda não testadas** (5 ou 15 m/s com 0 ou 30 s), em duas políticas cada, reutilizando os pares de 10 s já validados:
+
+~~~bash
+# Na raiz COMOV_NS3_B, depois do merge
+python3 scripts/run_p2_matrix.py ../../ns-3 --start-run 1 --end-run 1 --skip-existing
+python3 scripts/paired_statistics_p2.py --output-dir out/p2 --start-run 1 --end-run 1
+~~~
+
+A primeira execução gera **8 simulações novas** e verifica novamente as 4 já existentes, desde que mantenham resumo e análise compatíveis. A segunda produz apenas um **resumo-piloto**; com n=1 não existe IC95%.
+
+Depois de rever as seis condições com run=1, executar as runs 2 a 10 e calcular diferenças emparelhadas com IC95% de Student-t:
+
+~~~bash
+python3 scripts/run_p2_matrix.py ../../ns-3 --start-run 2 --end-run 10
+python3 scripts/paired_statistics_p2.py --output-dir out/p2 --start-run 1 --end-run 10
+~~~
+
+Isto executa **108 simulações adicionais** (9 runs ×6 combinações×2 políticas), não 120 porque as 12 de run=1 já existem. A CI caracteriza apenas a variabilidade estocástica do modelo ns-3 configurado, não a incerteza do canal de uma estrada real. Ver [auditoria dos pilotos de sensibilidade](docs/14_sensibilidade_pacing_velocidade.md).
