@@ -1,6 +1,6 @@
 # P2 — Comparação emparelhada: envio imediato vs FIFO de aplicação
 
-**Estado:** código desenvolvido para ns-3.48; **ainda não compilado nem executado no WSL**. Não existem resultados P2 confirmados. A simulação e análise dos CSV de P1 (5 m/s, paragem 10 s) foram validadas e servem de referência para o primeiro par.
+**Estado atualizado (23/11/2026):** P2 compilou e executou no WSL (ns-3.48) para **5 m/s e paragem de 10 s**, nas duas políticas. Os 14 CSV enviados foram auditados independentemente: imediato 5620/12000 entregues no prazo, FIFO 9312/12000, ganho **+30,7667 pontos percentuais**, pico de 3,695 MB e zero overflow. [Relatório da auditoria](13_auditoria_p2_par_v5_stop10.md). Ainda faltam sensibilidade ao pacing, 15 m/s e repetições independentes.
 
 ## Objetivo
 
@@ -130,3 +130,7 @@ A execução alternativa cria um prefixo separado \`out/p2/v5_stop10_run1_fifo_p
 7. Só depois planeamento de 10 repetições por configuração, runs emparelhadas e IC95%.
 
 **Limitação para inferência estatística:** a baseline de propagação é determinística e o número de runs por configuração ainda é 1. Para intervalos de confiança científicos, planear explicitamente as fontes de aleatoriedade e o emparelhamento dos streams RNG, além de aumentar as repetições.
+
+## Primeiro par executado — referência e leitura crítica
+
+Resultados completos, algoritmos de contabilidade e 14 CSV verificados no [relatório de auditoria P2](13_auditoria_p2_par_v5_stop10.md). A FIFO esvaziou-se em t=56,174678770 s, **antes da paragem em t=70 s**, e recuperou 3692 mensagens anteriores à associação. Este facto demonstra o potencial do buffer no cenário simulado, mas não permite inferir que a paragem seja desnecessária; é preciso comparar 0, 10 e 30 s. Os 2 ms de pacing e os 4 MB continuam hipóteses experimentais e exigem testes de robustez.
