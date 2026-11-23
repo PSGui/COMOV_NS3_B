@@ -133,7 +133,16 @@ def main():
                         "ap_shift_delivery_change_messages": (
                             int(s["received_on_time"]) - int(b["received_on_time"])
                         ),
+                        "baseline_association_s": float(b["associated_duration_s"]),
                         "shifted_association_s": float(s["associated_duration_s"]),
+                        "baseline_contact_goodput_mbps": (
+                            8e-3 * int(b["received_on_time"]) /
+                            float(b["associated_duration_s"])
+                        ),
+                        "shifted_contact_goodput_mbps": (
+                            8e-3 * int(s["received_on_time"]) /
+                            float(s["associated_duration_s"])
+                        ),
                         "shifted_overflow": int(s["buffer_overflow"]),
                         "shifted_expired": int(s["buffer_expired"]),
                     })
