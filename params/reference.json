@@ -4,7 +4,7 @@
   "simulator": {
     "name": "ns-3",
     "version": "3.48",
-    "version_status": "P0 e P1 compilados e validados no WSL; P2 implementado, ainda sem compilação/execução no WSL"
+    "version_status": "P0 e P1 validados no WSL; P2 par immediate/fifo v=5mps stop=10s executado no ns-3.48 e 14 CSV auditados"
   },
   "scenario": {
     "ap_position_m": [
@@ -47,7 +47,7 @@
     "buffer_counting": "bytes de payload da aplicacao",
     "on_overflow": "drop_newest",
     "flush_pacing_ms": 2,
-    "flush_pacing_status": "piloto_P2_provisorio; taxa de aplicacao 4Mbps; validar congestionamento antes de congelar",
+    "flush_pacing_status": "piloto_P2_2ms_executado_com_sucesso; robustez_3ms_e_v15_pendente; nao_congelado",
     "immediate_when_not_associated": "drop_at_application; no UDP SendTo, no application queue",
     "immediate_socket_success_semantics": "accepted_by_UDP_IP_only; not evidence of radio delivery",
     "immediate_policy_status": "provisorio_P1; comparar com interpretacao do docente antes de M2",
@@ -55,7 +55,23 @@
     "expiry_policy": "descartar_na_fila_ao_completar_60s_desde_geracao",
     "buffer_fifo_order": "por_instante_de_geracao_e_sequencia",
     "buffer_socket_accepted": "remover_da_fila_ao_chamar_SendTo; sem_retransmissao_aplicacional_de_UDP",
-    "p2_policies_in_same_cpp": "src/b10-p2-buffer-compare.cc --policy=immediate|fifo"
+    "p2_policies_in_same_cpp": "src/b10-p2-buffer-compare.cc --policy=immediate|fifo",
+    "p2_pilot_result": {
+      "speed_mps": 5,
+      "stop_duration_s": 10,
+      "seed": 1,
+      "run": 1,
+      "generated_each": 12000,
+      "immediate_received_on_time": 5620,
+      "fifo_received_on_time": 9312,
+      "delta_percentage_points": 30.766666666666666,
+      "fifo_peak_bytes": 3695000,
+      "fifo_overflow": 0,
+      "fifo_expired": 2585,
+      "fifo_first_empty_s": 56.17467877,
+      "fifo_p95_rx_latency_s": 33.19375713899999,
+      "status": "analisado_CSV_real; sem IC95_statistico"
+    }
   },
   "simulation": {
     "warmup_start_s": 0,
