@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 e P1 validados no ns-3.48; P2 testado com v=5 e 15 m/s, paragem de 10 s, políticas imediato/FIFO e sensibilidade de pacing 2/3 ms. A 15 m/s, FIFO entregou 6530/12000 mensagens vs 2533/12000 com envio imediato (+33,31 pontos percentuais), mas atingiu os 4 MB (1371 overflow, 4000 expiradas). Faltam paragens 0/30 s, repetições independentes e IC95%; os pilotos atuais são run=1.
+> **Estado atual:** P0 e P1 validados no ns-3.48; **P2 concluiu os 12 cenários-base** (v=5/15 m/s × paragens 0/10/30 s × imediato/FIFO), com os seis pares validados em run=1. FIFO recuperou +3692 mensagens a 5 m/s e +3997 a 15 m/s em cada duração de paragem; o ganho de entrega e as expirações/overflow foram registados. **Faltam variabilidade entre runs, IC95% e robustez.**
 
 ## Navegação
 
@@ -20,6 +20,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P2 — implementação e validação proposta do buffer FIFO](docs/12_p2_fifo_comparacao.md)
 - [P2 — resultados verificados e auditoria do primeiro par](docs/13_auditoria_p2_par_v5_stop10.md)
 - [P2 — sensibilidade a pacing e velocidade: 21 CSV auditados](docs/14_sensibilidade_pacing_velocidade.md)
+- [P2 — matriz completa de 12 simulações, run=1](docs/15_resultados_matriz_12_cenarios_run1.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -131,23 +132,28 @@ python3 scripts/compare_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate
 
 O comparador confirma paridade das trajetórias e eventos de associação com tolerância para diferenças de arredondamento da ordem de 1e-9, lista as sequências de IDs aceites mas não observados, quantifica mensagens recuperadas pré-associação, atraso de cauda e instante de esvaziamento do FIFO. A auditoria completa está em [docs/13_auditoria_p2_par_v5_stop10.md](docs/13_auditoria_p2_par_v5_stop10.md). Os controlos de pacing de 3 ms e velocidade de 15 m/s foram concluídos; falta comparar paragens 0 e 30 s e depois realizar ≥10 runs emparelhadas por cenário.
 
-## P2 — completar a matriz e calcular IC95%
+## P2 — matriz inicial concluída; avaliar variabilidade e IC95%
 
-Executar as **quatro combinações velocidade/paragem ainda não testadas** (5 ou 15 m/s com 0 ou 30 s), em duas políticas cada, reutilizando os pares de 10 s já validados:
+As **12 simulações iniciais já terminaram** (8 executadas agora, 4 reutilizadas). Cada uma gerou 12 000 mensagens, os validadores Python passaram e os comparadores confirmaram os seis pares. Ver [resultados da matriz](docs/15_resultados_matriz_12_cenarios_run1.md).
+
+O resumo-piloto (n=1, **sem IC95%**) pode ser produzido sem voltar a correr ns-3:
 
 ~~~bash
-# Na raiz COMOV_NS3_B, depois do merge
-python3 scripts/run_p2_matrix.py ../../ns-3 --start-run 1 --end-run 1 --skip-existing
 python3 scripts/paired_statistics_p2.py --output-dir out/p2 --start-run 1 --end-run 1
 ~~~
 
-A primeira execução gera **8 simulações novas** e verifica novamente as 4 já existentes, desde que mantenham resumo e análise compatíveis. A segunda produz apenas um **resumo-piloto**; com n=1 não existe IC95%.
-
-Depois de rever as seis condições com run=1, executar as runs 2 a 10 e calcular diferenças emparelhadas com IC95% de Student-t:
+Antes de executar 108 simulações adicionais, verificar a variabilidade com apenas a run=2:
 
 ~~~bash
-python3 scripts/run_p2_matrix.py ../../ns-3 --start-run 2 --end-run 10
+python3 scripts/run_p2_matrix.py ../../ns-3 --start-run 2 --end-run 2
+python3 scripts/paired_statistics_p2.py --output-dir out/p2 --start-run 1 --end-run 2
+~~~
+
+Se as diferenças emparelhadas variarem de forma coerente, executar runs 3 a 10 e calcular IC95% de Student-t:
+
+~~~bash
+python3 scripts/run_p2_matrix.py ../../ns-3 --start-run 3 --end-run 10
 python3 scripts/paired_statistics_p2.py --output-dir out/p2 --start-run 1 --end-run 10
 ~~~
 
-Isto executa **108 simulações adicionais** (9 runs ×6 combinações×2 políticas), não 120 porque as 12 de run=1 já existem. A CI caracteriza apenas a variabilidade estocástica do modelo ns-3 configurado, não a incerteza do canal de uma estrada real. Ver [auditoria dos pilotos de sensibilidade](docs/14_sensibilidade_pacing_velocidade.md).
+Não interpretar intervalos muito estreitos ou nulos num canal determinístico como incerteza real desprezível. A estatística caracteriza apenas o simulador configurado.
