@@ -31,11 +31,11 @@ def make_fixture(root):
                                "generated", "received_unique", "received_on_time",
                                "received_late", "duplicate_rx", "associated_duration_s",
                                "buffer_peak_bytes", "buffer_overflow", "buffer_expired",
-                               "not_observed_after_socket_accept"]
+                               "not_observed_after_socket_accept", "policy"]
                     write_csv(Path(str(prefix) + "_summary.csv"), headers,
                               [[speed, stop, 0, 1, run, 12000, count, count,
                                 0, 0, 10, 2000 if policy == "fifo" else 0,
-                                0, 0, 0]])
+                                0, 0, 0, policy]])
                     write_csv(Path(str(prefix) + "_association.csv"),
                               ["t_s", "event", "ap_mac", "bus_x_m", "distance_ap_m"],
                               [[40, "assoc", "00:00:00:00:00:01", 0, 1],
