@@ -12,6 +12,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [Tabela rastreável de parâmetros](docs/02_parametros.md)
 - [Modelo teórico e todas as contas principais](docs/03_modelo_teorico.md)
 - [12 simulações obrigatórias, pilotos e robustez](docs/04_matriz_simulacoes.md)
+- [Validação independente dos CSV do preflight](docs/05_validacao_preflight.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
 - [Calculadora independente e geração de matriz CSV](scripts/preflight.py)
