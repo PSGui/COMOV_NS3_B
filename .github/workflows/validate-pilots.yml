@@ -18,3 +18,5 @@ jobs:
         run: python3 scripts/test_p2_validation.py
       - name: Validate P2 paired-comparison analysis
         run: python3 scripts/test_p2_comparison.py
+      - name: Validate P2 paired Student-t confidence intervals
+        run: python3 scripts/test_p2_statistics.py
