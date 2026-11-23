@@ -94,3 +94,13 @@ PY
 ```
 
 Ver também [matriz inicial run=1](15_resultados_matriz_12_cenarios_run1.md).
+
+## Gráficos reproduzíveis
+
+O script `scripts/plot_paired_statistics.py` usa exclusivamente o `out/p2/paired_statistics.csv` e produz três PNGs: (1) percentagens médias das duas políticas; (2) **IC95% aplicado apenas à diferença emparelhada**; (3) médias de overflow e de expirações antes de envio. Não requer executar ns-3.
+
+~~~bash
+python3 scripts/plot_paired_statistics.py --input out/p2/paired_statistics.csv --output-dir out/p2
+~~~
+
+O estudo de **atraso médio e percentis das 10 runs** requer os ficheiros `*_received.csv` individuais: não está presente no resumo agregado de 13 colunas. Este ficheiro também não permite estimar IC95% separados para cada política sem acesso às dez observações originais.
