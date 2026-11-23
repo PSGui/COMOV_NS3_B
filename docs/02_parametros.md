@@ -33,7 +33,7 @@ Legendas: **OBR.** = imposto; **PROP.** = proposto por nós e ainda não validad
 | Tráfego acumulado | 12 000 mensagens; 12 MB | DER. | 120 ×100; 12 000 ×1 000 |
 | Buffer | 4 000 000 bytes úteis | PROP. | 4 000 mensagens, 40 s de geração sem escoamento |
 | Overflow | descartar mensagem nova (drop-newest) | PROP. | Reprodutível; analisar consequências |
-| Pacing FIFO | por definir no piloto | PILOTO | Medir backlog e capacidade antes de fixar; evitar sobrecarga artificial |
+| Pacing FIFO | 2 ms no primeiro P2 (3 ms na robustez) | PILOTO | 2 ms ⇒ 500 msg/s = 4 Mbit/s de payload; verificar overhead e filas MAC antes de fixar |
 | Seed/run/streams | registar e emparelhar | OBR. | Repetições independentes |
 | Deslocação do AP | -30 e +30 m (hipótese inicial) | PROP. | Selecionar dois casos críticos após piloto |
 
@@ -60,4 +60,4 @@ O autocarro inicia a janela de geração em x(10)=-60v; assim, o início da para
 
 ## Configurações a congelar na M2
 
-As linhas acima marcadas **PROP.** não devem aparecer no relatório como parâmetros empiricamente justificados antes da validação. Na M2, anotar: valor final, fonte, versão ns-3, comando que o aplicou e teste que o verificou.
+As linhas acima marcadas **PROP.** não devem aparecer no relatório como parâmetros empiricamente justificados antes da validação. Na M2, anotar: valor final, fonte, versão ns-3, comando que o aplicou e teste que o verificou. A política FIFO descarta mensagens pendentes ao atingir 60 s desde a geração, com overflow drop-newest, e não retransmite mensagens já aceites por UDP.
