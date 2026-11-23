@@ -1,5 +1,5 @@
 // COMOV B10 - P2: compare strict-immediate and bounded-FIFO UDP policies.
-// Target: ns-3.48. Pilot ONLY: no application buffer and no main-run statistics.
+// Target: ns-3.48. Pilot: one shared topology, two application policies.
 // All 1000-byte UDP payloads contain a 16-byte [sequence,generation_ns] header.
 
 #include "ns3/core-module.h"
@@ -9,6 +9,7 @@
 #include "ns3/propagation-module.h"
 #include "ns3/wifi-module.h"
 
+#include <algorithm>
 #include <array>
 #include <deque>
 #include <cmath>
@@ -624,7 +625,8 @@ main(int argc, char** argv)
                "received_late,duplicate_rx,malformed_rx,not_observed_after_socket_accept,"
                "associated_duration_s,assoc_events,deassoc_events,policy,"
                "buffer_enqueued,buffer_overflow,buffer_expired,buffer_sent_attempts,"
-               "buffer_remaining,buffer_peak_bytes,buffer_limit_bytes,pacing_ms\n";
+               "buffer_remaining,buffer_peak_bytes,buffer_limit_bytes,pacing_ms,"
+               "path_loss_exponent,tx_dbm,wifi_standard,frequency_hz\n";
     summary << std::fixed << std::setprecision(9)
             << speed << ',' << stopSeconds << ',' << apX << ',' << seed << ',' << run
             << ',' << g.generated << ',' << g.dropNoAssociation << ','
@@ -638,7 +640,8 @@ main(int argc, char** argv)
             << g.enqueued << ',' << g.overflowDropNewest << ','
             << g.expiredBeforeSend << ',' << g.bufferSendAttempts << ','
             << g.queue.size() << ',' << g.maximumBufferedBytes << ','
-            << g.bufferLimitBytes << ',' << g.pacingMs << '\n';
+            << g.bufferLimitBytes << ',' << g.pacingMs << ','
+            << exponent << ',' << txDbm << ",802.11g,2412000000\n";
 
     std::cout << "P2 ns-3.48: policy=" << g.policy
               << ", speed=" << speed << " m/s, stop=" << stopSeconds
