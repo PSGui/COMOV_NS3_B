@@ -343,9 +343,12 @@ main(int argc, char** argv)
 
     WifiHelper wifi;
     wifi.SetStandard(WIFI_STANDARD_80211g);
+    // IEEE 802.11g at 2.4 GHz uses ERP-OFDM, not legacy OFDM.
+    // OfdmRate6Mbps is a 5 GHz OFDM mode and causes a fatal error once
+    // unicast data are transmitted in ns-3.48 (WifiTxVector::IsValid).
     wifi.SetRemoteStationManager("ns3::ConstantRateWifiManager",
-                                 "DataMode", StringValue("OfdmRate6Mbps"),
-                                 "ControlMode", StringValue("OfdmRate6Mbps"));
+                                 "DataMode", StringValue("ErpOfdmRate6Mbps"),
+                                 "ControlMode", StringValue("ErpOfdmRate6Mbps"));
 
     YansWifiPhyHelper phy;
     phy.SetChannel(channel);

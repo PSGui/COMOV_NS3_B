@@ -4,7 +4,7 @@
   "simulator": {
     "name": "ns-3",
     "version": "3.48",
-    "version_status": "P0 compilado e validado no WSL; codigo P1 escrito, execucao ainda pendente"
+    "version_status": "P0 compilou; P1 compilou mas primeira execução abortou (DataMode OFDM inválido para 2,4 GHz); correção ERP-OFDM pendente de teste"
   },
   "scenario": {
     "ap_position_m": [
@@ -80,7 +80,12 @@
     "required_margin_db": null,
     "noise_figure_db": null,
     "rate_selection": "fixa_no_piloto_sem_algoritmo_de_adaptacao",
-    "fading": "nao_incluido_na_baseline; robustez_a_definir"
+    "fading": "nao_incluido_na_baseline; robustez_a_definir",
+    "reference_data_mode": "ErpOfdmRate6Mbps",
+    "reference_control_mode": "ErpOfdmRate6Mbps",
+    "comparison_data_mode": "OfdmRate6Mbps",
+    "comparison_control_mode": "OfdmRate6Mbps",
+    "mode_status": "band_specific_ns3_3.48; P1 reteste pendente"
   },
   "analysis": {
     "illustrative_radius_m": [

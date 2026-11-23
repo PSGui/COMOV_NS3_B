@@ -26,6 +26,7 @@ if [[ -e "$DEST" ]] && ! head -n 1 "$DEST" | grep -q 'COMOV B10 - P0'; then
   echo "Refusing to overwrite an unrelated scratch program: $DEST" >&2
   exit 1
 fi
+python3 "$PROJECT_DIR/scripts/check_wifi_modes.py"
 cp "$SRC" "$DEST"
 mkdir -p "$PROJECT_DIR/out/p0"
 CSV="$PROJECT_DIR/out/p0/p0_${STANDARD}.csv"
