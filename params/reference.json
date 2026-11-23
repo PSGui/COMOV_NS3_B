@@ -273,7 +273,7 @@
       "sem_rede_celular"
     ],
     "contact_utilization_metric": "goodput_on_time_mbps = 8*1000*N_unique_received_on_time / (1e6*MAC_associated_seconds); app payload only, not PHY airtime",
-    "contact_metric_status": "scripts/analyze_p2_contact.py criado; pendente execucao nos 120 CSV de out/p2",
+    "contact_metric_status": "measured_on_120_runs; 12_policy_scenario_means; 6_pairwise_95ci; independently_rechecked",
     "ap_robustness_setup": {
       "ap_x_m": [
         -30,
@@ -294,7 +294,33 @@
       ],
       "initial_runs": 1,
       "new_simulations": 8,
-      "status": "scripts/run_p2_ap_robustness.py criado; pendente execucao em WSL"
+      "status": "executed_8_new_simulations_run1; pilot_csv_audited; no_statistics_across_runs",
+      "observation": "AP +/-30m yields same FIFO gain of 3997 received packets in all four shifted pairs; FIFO overflow at stop30: 1034 x=-30, 1239 x=0, 1435 x=+30"
+    },
+    "contact_utilization_findings": {
+      "v5_mps_fifo_contact_goodput_mbps_by_stop0_10_30": [
+        1.409634,
+        1.302466,
+        1.172639
+      ],
+      "v5_mps_immediate_contact_goodput_mbps_by_stop0_10_30": [
+        0.783505,
+        0.786052,
+        0.789888
+      ],
+      "v15_mps_fifo_contact_goodput_mbps_by_stop0_10_30": [
+        2.711649,
+        1.985307,
+        1.473728
+      ],
+      "v15_mps_immediate_contact_goodput_mbps_by_stop0_10_30": [
+        0.752677,
+        0.770519,
+        0.783266
+      ],
+      "v15_mps_stop0_goodput_gain_mbps": 1.958973,
+      "v15_mps_stop0_fifo_mean_delivery_delay_s": 26.986184,
+      "notes": "App useful payload per associated second, NOT Wi-Fi PHY airtime"
     }
   }
 }
