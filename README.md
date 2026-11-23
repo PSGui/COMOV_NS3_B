@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 validado; P1 compilado e executado com sucesso no ns-3.48 (5 m/s, paragem 10 s). Validação Python passou e os cinco CSV foram auditados independentemente, incluindo identificação dos 100 datagramas aceites e não recebidos. Sem testes FIFO até esta fase.
+> **Estado atual:** P0 e P1 validados no ns-3.48; P2 compilado e executado para um par emparelhado com v=5 m/s, paragem 10 s. Os 14 CSV foram auditados: a FIFO entregou 9312/12000 mensagens até 60 s, contra 5620/12000 no envio imediato (**+30,77 pontos percentuais**), com aumento do atraso médio. Pacing de 2 ms ainda provisório; faltam ensaios de robustez e repetições para inferência estatística.
 
 ## Navegação
 
@@ -18,6 +18,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P1 — mobilidade contínua, associação e UDP](docs/09_p1_mobility_udp.md)
 - [P1 — primeiros resultados do caso 5 m/s e paragem 10 s](docs/10_resultados_p1_piloto_v5_stop10.md)
 - [P2 — implementação e validação proposta do buffer FIFO](docs/12_p2_fifo_comparacao.md)
+- [P2 — resultados verificados e auditoria do primeiro par](docs/13_auditoria_p2_par_v5_stop10.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -103,11 +104,11 @@ python3 scripts/review_p1.py --prefix out/p1/v5_stop10_run1 --require-contact
 python3 scripts/plot_p1.py --prefix out/p1/v5_stop10_run1
 ~~~
 
-Foi corrigido o nome `received_unique` da coluna no CSV de resumo. A execução C++ reportou 12 000 mensagens geradas, 5 720 aceites na socket e 5 620 recebidas; falta confirmar todos os registos de aplicação e associação no verificador. Ver [resultados provisórios](docs/10_resultados_p1_piloto_v5_stop10.md).
+Foi corrigido o nome `received_unique` da coluna no CSV de resumo. A execução e os CSV de P1 foram posteriormente auditados (ver [auditoria P1](docs/11_auditoria_p1_csv_v5_stop10.md)). Ver [resultados provisórios](docs/10_resultados_p1_piloto_v5_stop10.md).
 
-## P2 — primeiro par de simulações (por validar)
+## P2 — primeiro par executado e auditado
 
-Depois do merge do PR P2:
+Os seguintes comandos reproduzem o primeiro par; **não é necessário repetir as simulações para analisar os CSV já gerados**:
 
 ~~~bash
 cd ~/COMOV/Project_B/COMOV_NS3_B
@@ -119,4 +120,12 @@ python3 scripts/compare_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate
 python3 scripts/plot_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate --fifo-prefix out/p2/v5_stop10_run1_fifo --output-dir out/p2
 ~~~
 
-O mesmo simulador P2 executa as duas políticas, com o mesmo seed/run. O validador reconstrói as operações de FIFO e distingue geração, submissão UDP e chegada ao AP. O resultado só será conclusivo após a compilação no WSL e a revisão dos CSV. Mais detalhes em [docs/12_p2_fifo_comparacao.md](docs/12_p2_fifo_comparacao.md).
+O mesmo simulador P2 executa as duas políticas, com o mesmo seed/run. O validador reconstrói as operações de FIFO e distingue geração, submissão UDP e chegada ao AP. A compilação e os CSV deste par já foram analisados: 12 000 geradas por política, 5 620 receções imediatas e 9 312 com FIFO; os restantes cenários ainda não foram executados. Mais detalhes em [docs/12_p2_fifo_comparacao.md](docs/12_p2_fifo_comparacao.md).
+
+### Diagnóstico aprofundado do P2
+
+~~~bash
+python3 scripts/compare_p2.py --immediate-prefix out/p2/v5_stop10_run1_immediate --fifo-prefix out/p2/v5_stop10_run1_fifo --output-json out/p2/v5_stop10_run1_pair_analysis.json
+~~~
+
+O comparador confirma paridade das trajetórias e eventos de associação com tolerância para diferenças de arredondamento da ordem de 1e-9, lista as sequências de IDs aceites mas não observados, quantifica mensagens recuperadas pré-associação, atraso de cauda e instante de esvaziamento do FIFO. A auditoria completa está em [docs/13_auditoria_p2_par_v5_stop10.md](docs/13_auditoria_p2_par_v5_stop10.md). Próximo controlo: pacing 3 ms e, separadamente, velocidade 15 m/s; só depois bloquear parâmetros e avançar para as 12 condições ×10 runs.
