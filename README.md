@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 compilado e executado pelo grupo em ns-3.48 (modelo log-distance e RSS estático verificados). Ainda não existem resultados UDP, mobilidade contínua ou buffer. Os parâmetros não impostos no enunciado são provisórios até M2.
+> **Estado atual:** P0 compilado e validado no WSL (ns-3.48). O código de P1 com mobilidade, associação e UDP está preparado para teste; **ainda não foi executado/validado no WSL**. Não existem ainda resultados do buffer. Parâmetros propostos aguardam M2.
 
 ## Navegação
 
@@ -15,6 +15,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [Validação independente dos CSV do preflight](docs/05_validacao_preflight.md)
 - [P0 — propagação no ns-3.48 e execução no WSL](docs/07_p0_ns3_48.md)
 - [P0 — resultados observados, limites e correção de CSV](docs/08_resultados_p0_11g.md)
+- [P1 — mobilidade contínua, associação e UDP](docs/09_p1_mobility_udp.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
 - [Calculadora independente e geração de matriz CSV](scripts/preflight.py)
@@ -59,3 +60,20 @@ bash scripts/run_p0.sh /caminho/para/ns-3.48
 ```
 
 O caminho tem de apontar para a instalação real do simulador. O script cria `out/p0/p0_11g.csv` e valida os resultados. P0 já compilou no WSL; a correção posterior do formato CSV exige nova execução. Para criar gráficos opcionais (requer `matplotlib`): `python3 scripts/plot_p0.py --input out/p0/p0_11g.csv --output-dir out/p0`.
+
+## P1 — próximo piloto (sem buffer)
+
+Depois de integrar o PR de P1:
+
+~~~bash
+cd ~/COMOV/Project_B/COMOV_NS3_B
+git pull
+bash scripts/run_p1.sh ../../ns-3 5 10
+python3 scripts/plot_p1.py --prefix out/p1/v5_stop10_run1
+~~~
+
+O comando gera 12 000 mensagens de 1000 bytes entre 10 e 130 s, sem armazenamento na aplicação; regista associação, mobilidade e receção UDP até t=200 s. Verifica os CSV e cria três figuras separadas. O piloto P1 **não tem resultados confirmados** antes da execução no WSL. Para testar só a validação dos dados com casos sintéticos (sem ns-3):
+
+~~~bash
+python3 scripts/test_p1_validation.py
+~~~

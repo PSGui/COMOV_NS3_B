@@ -17,7 +17,7 @@ Hipóteses a testar, **não conclusões**:
 
 - **12 configurações obrigatórias** = 2 velocidades (5, 15 m/s) × 3 tempos de paragem (0, 10, 30 s) × 2 políticas (imediata e buffer).
 - Taxa = 100 mensagens/s, 1000 bytes **por mensagem UDP à aplicação**, durante a mesma janela de geração.
-- **Imediata:** cada mensagem é submetida à socket quando gerada, sem fila adicional implementada na aplicação. Fila MAC/IP não é confundida com buffer de aplicação e deve ser registada.
+- **Imediata (definição estrita a validar na M2):** a mensagem é sempre gerada; se não existe associação Wi-Fi, é descartada na aplicação, não sendo submetida à socket. Havendo associação, a mensagem é imediatamente submetida ao UDP, sem fila de aplicação. Filas IP/MAC ainda podem existir e devem ser registadas ou tratadas como limitação.
 - **Buffer FIFO:** se o AP não está associado, armazenar; após associação, enviar em ordem FIFO a um ritmo definido no piloto; novas mensagens entram na mesma fila. Capacidade proposta: 4 000 000 bytes de payload; **drop-newest** em overflow. O buffer não descarta automaticamente mensagens aos 60 s: a métrica considera entrega tardia.
 - Dentro de cada par de políticas, conservar percurso, horários de geração, parâmetros PHY/MAC e entradas aleatórias externas.
 - **Não** fixar "alcance Wi-Fi" no código por conveniência; é consequência do modelo de canal, da receção e do MAC.
