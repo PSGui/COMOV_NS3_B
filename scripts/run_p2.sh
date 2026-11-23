@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Usage: bash scripts/run_p2.sh ../../ns-3 [immediate|fifo] [5|15] [0|10|30] [run] [pacing_ms]
+# Usage: bash scripts/run_p2.sh ../../ns-3 [immediate|fifo] [5|15] [0|10|30] [run] [pacing_ms] [ap_x_m]
 # The same C++ topology and generation timeline is used for BOTH policies.
 set -euo pipefail
 
-if [[ $# -lt 1 || $# -gt 6 ]]; then
-  echo "Usage: bash scripts/run_p2.sh ../../ns-3 [immediate|fifo] [5|15] [0|10|30] [run] [pacing_ms]" >&2
+if [[ $# -lt 1 || $# -gt 7 ]]; then
+  echo "Usage: bash scripts/run_p2.sh ../../ns-3 [immediate|fifo] [5|15] [0|10|30] [run] [pacing_ms] [ap_x_m]" >&2
   exit 2
 fi
 
@@ -15,11 +15,13 @@ SPEED=5
 STOP=10
 RUN=1
 PACE=2
+AP_X=0
 if [[ $# -ge 2 ]]; then POLICY="$2"; fi
 if [[ $# -ge 3 ]]; then SPEED="$3"; fi
 if [[ $# -ge 4 ]]; then STOP="$4"; fi
 if [[ $# -ge 5 ]]; then RUN="$5"; fi
 if [[ $# -ge 6 ]]; then PACE="$6"; fi
+if [[ $# -ge 7 ]]; then AP_X="$7"; fi
 if [[ "$POLICY" != "immediate" && "$POLICY" != "fifo" ]]; then
   echo "Policy must be immediate or fifo" >&2
   exit 2
@@ -38,6 +40,11 @@ if ! [[ "$RUN" =~ ^[0-9]+$ ]] || [[ "$RUN" -eq 0 ]]; then
 fi
 if [[ ! "$PACE" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
   echo "Pacing must be a positive decimal number in ms" >&2
+  exit 2
+fi
+# Robustness AP coordinates are intentionally discrete for reproducibility.
+if [[ "$AP_X" != "0" && "$AP_X" != "-30" && "$AP_X" != "30" ]]; then
+  echo "AP x position must be -30, 0 or +30 m" >&2
   exit 2
 fi
 if [[ ! -x "$NS3_DIR/ns3" || ! -d "$NS3_DIR/scratch" ]]; then
@@ -59,11 +66,16 @@ PREFIX="$ROOT/out/p2/v${SPEED}_stop${STOP}_run${RUN}_${POLICY}"
 if [[ "$POLICY" == "fifo" && "$PACE" != "2" ]]; then
   PREFIX="$PREFIX"_pace"$PACE"
 fi
+if [[ "$AP_X" == "-30" ]]; then
+  PREFIX="${PREFIX}_apxm30"
+elif [[ "$AP_X" == "30" ]]; then
+  PREFIX="${PREFIX}_apxp30"
+fi
 echo "ns-3 source: $NS3_DIR"
 echo "Program: $DEST"
 echo "Output prefix: $PREFIX"
 
 cd "$NS3_DIR"
-./ns3 run "scratch/b10-p2-buffer-compare --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --bufferBytes=4000000 --pacingMs=$PACE --prefix=$PREFIX"
+./ns3 run "scratch/b10-p2-buffer-compare --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --bufferBytes=4000000 --pacingMs=$PACE --apX=$AP_X --prefix=$PREFIX"
 python3 "$ROOT/scripts/review_p2.py" --prefix "$PREFIX" --require-contact
 echo "P2 CSVs and validated analysis: $PREFIX"
