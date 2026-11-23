@@ -1,0 +1,100 @@
+{
+  "_schema_note": "Valores obrigatorios = enunciado B10; restantes valores provisórios para piloto. Não constitui configuração validada do ns-3.",
+  "status": "provisorio_nao_validado",
+  "simulator": {
+    "name": "ns-3",
+    "version": null,
+    "version_status": "definir_quando_ambiente_WSL_for_confirmado"
+  },
+  "scenario": {
+    "ap_position_m": [
+      0,
+      0,
+      4
+    ],
+    "bus_antenna_height_m": 2.5,
+    "stop_x_m": 0,
+    "stop_start_s": 70,
+    "approach_speeds_mps": [
+      5,
+      15
+    ],
+    "stop_durations_s": [
+      0,
+      10,
+      30
+    ],
+    "trajectory": "x=v*(t-stop_start) se t<stop_start; x=0 durante a paragem; x=v*(t-stop_start-stop_duration) depois da paragem",
+    "instantaneous_acceleration": "simplificacao a declarar",
+    "ap_relocation_check_m": [
+      -30,
+      30
+    ]
+  },
+  "application": {
+    "transport": "UDP/IPv4",
+    "packet_payload_bytes": 1000,
+    "embedded_app_header_bytes": 16,
+    "generation_rate_packets_per_s": 100,
+    "generation_start_s": 10,
+    "generation_end_s": 130,
+    "deadline_s": 60,
+    "policies": [
+      "immediate",
+      "buffer_fifo"
+    ],
+    "buffer_max_bytes": 4000000,
+    "buffer_counting": "bytes de payload da aplicacao",
+    "on_overflow": "drop_newest",
+    "flush_pacing_ms": null,
+    "flush_pacing_status": "definir_e_congelar_no_piloto"
+  },
+  "simulation": {
+    "warmup_start_s": 0,
+    "warmup_end_s": 10,
+    "drain_end_s": 200,
+    "initial_runs_per_configuration": 10,
+    "confidence_level": 0.95,
+    "seed_policy": "repeticoes_independentes_e_condicoes_externas_emparelhadas"
+  },
+  "wifi": {
+    "reference_standard": "802.11g",
+    "reference_frequency_hz": 2412000000,
+    "comparison_standard": "802.11a",
+    "comparison_frequency_hz": 5180000000,
+    "channel_width_mhz": 20,
+    "phy_rate_bps": 6000000,
+    "tx_power_dbm": 20,
+    "tx_antenna_gain_dbi": 0,
+    "rx_antenna_gain_dbi": 0,
+    "tx_system_loss_db": 0,
+    "rx_system_loss_db": 0,
+    "propagation_model": "LogDistancePropagationLossModel",
+    "reference_distance_m": 1,
+    "path_loss_exponent": 3,
+    "reference_loss_db": "calcular_fspl_para_frequencia_escolhida; nunca usar valor predefinido 5.15GHz",
+    "receiver_sensitivity_dbm": null,
+    "required_margin_db": null,
+    "noise_figure_db": null,
+    "rate_selection": "fixa_no_piloto_sem_algoritmo_de_adaptacao",
+    "fading": "nao_incluido_na_baseline; robustez_a_definir"
+  },
+  "analysis": {
+    "illustrative_radius_m": [
+      50,
+      100
+    ],
+    "illustrative_receiver_threshold_dbm": [
+      -75,
+      -80,
+      -85
+    ],
+    "model_limitations": [
+      "sem_canal_medido",
+      "sem_obstaculos",
+      "sem_aceleracao_fisica",
+      "sem_handover",
+      "sem_rede_celular"
+    ]
+  }
+}
