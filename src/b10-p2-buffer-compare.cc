@@ -49,6 +49,7 @@ struct Pilot
     Ptr<StaWifiMac> mac;
     Ptr<LogDistancePropagationLossModel> loss;
     Ptr<Socket> sender;
+    Ipv4Address apIpv4;
     double speed{5.0};
     double stopSeconds{10.0};
     double apX{0.0};
@@ -77,6 +78,7 @@ struct Pilot
     uint32_t expiredBeforeSend{0};
     uint32_t bufferSendAttempts{0};
     bool flushScheduled{false};
+    int64_t lastSocketAttemptNs{-1};
     double pacingMs{2.0};
     std::string policy{"fifo"};
     std::ofstream bufferEventsCsv;
@@ -230,8 +232,15 @@ ScheduleFlush()
     {
         return;
     }
+    // Enforce pacing even when the FIFO becomes empty between two generations.
+    // This avoids a transient burst shorter than pacingMs after an empty queue.
+    const int64_t nowNs = Simulator::Now().GetNanoSeconds();
+    const int64_t intervalNs = static_cast<int64_t>(g.pacingMs * 1e6);
+    const int64_t earliestNs = (g.lastSocketAttemptNs < 0) ?
+        nowNs : (g.lastSocketAttemptNs + intervalNs);
+    const int64_t delayNs = std::max<int64_t>(0, earliestNs - nowNs);
     g.flushScheduled = true;
-    Simulator::ScheduleNow(&FlushOne);
+    Simulator::Schedule(NanoSeconds(delayNs), &FlushOne);
 }
 
 void
@@ -256,7 +265,8 @@ FlushOne()
     WriteUInt64(payload.data() + 8, static_cast<uint64_t>(msg.generatedNs));
     const Ptr<Packet> packet = Create<Packet>(payload.data(), kPayloadBytes);
     const int n = g.sender->SendTo(
-        packet, 0, InetSocketAddress(Ipv4Address("10.8.0.1"), kUdpPort));
+        packet, 0, InetSocketAddress(g.apIpv4, kUdpPort));
+    g.lastSocketAttemptNs = nowNs;
 
     ++g.bufferSendAttempts;
     if (n == static_cast<int>(kPayloadBytes))
@@ -565,6 +575,7 @@ main(int argc, char** argv)
     wifiDevices.Add(busDevices);
     const Ipv4InterfaceContainer interfaces = addresses.Assign(wifiDevices);
     const Ipv4Address apAddress = interfaces.GetAddress(0);
+    g.apIpv4 = apAddress;
 
     Ptr<Socket> receiver = Socket::CreateSocket(apNode.Get(0),
                                                 UdpSocketFactory::GetTypeId());
