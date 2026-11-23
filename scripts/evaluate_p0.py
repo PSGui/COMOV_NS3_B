@@ -35,6 +35,11 @@ def main():
         rows = list(csv.DictReader(file))
     if len(rows) != 7:
         raise ValueError(f"expected 7 static positions; got {len(rows)}")
+    for index, row in enumerate(rows, start=2):
+        # DictReader stores any extra fields under None, and uses None when
+        # a trailing column is missing. Neither is valid for the P0 schema.
+        if None in row or any(value is None for value in row.values()):
+            raise ValueError(f"malformed CSV at line {index}: wrong number of fields")
 
     max_model_error = 0.0
     phy_deltas = []
