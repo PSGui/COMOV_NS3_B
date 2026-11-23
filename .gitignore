@@ -1,0 +1,17 @@
+# Python/cache
+__pycache__/
+*.py[cod]
+.venv/
+
+# Generated predictions (reproducible by scripts)
+out/
+# Simulation outputs; retain raw files in final reproducibility package, not ad-hoc Git commits
+results/raw/
+results/processed/
+results/figures/
+
+# ns-3 local builds
+build/
+cmake-cache/
+*.pcap
+*.tr
