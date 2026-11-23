@@ -4,7 +4,7 @@
 
 Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi durante uma paragem, comparando **envio imediato** com **armazenamento FIFO de aplicação**.
 
-> **Estado atual:** P0 validou a propagação no WSL (ns-3.48). O P1 compilou, mas a primeira execução abortou por selecionar `OfdmRate6Mbps` (5 GHz) num cenário 802.11g (2,4 GHz). Corrigido para `ErpOfdmRate6Mbps`; **é necessário repetir P1 para o validar**. Não existem ainda resultados P1 completos nem resultados do buffer.
+> **Estado atual:** P0 validado; P1 agora compila e termina no ns-3.48 (5 m/s e 10 s de paragem). Primeiros contadores UDP disponíveis; o validador Python tinha um erro de nome de coluna, agora corrigido, pelo que **a auditoria dos CSV continua pendente**. Ainda não há testes FIFO.
 
 ## Navegação
 
@@ -16,6 +16,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P0 — propagação no ns-3.48 e execução no WSL](docs/07_p0_ns3_48.md)
 - [P0 — resultados observados, limites e correção de CSV](docs/08_resultados_p0_11g.md)
 - [P1 — mobilidade contínua, associação e UDP](docs/09_p1_mobility_udp.md)
+- [P1 — primeiros resultados do caso 5 m/s e paragem 10 s](docs/10_resultados_p1_piloto_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
 - [Calculadora independente e geração de matriz CSV](scripts/preflight.py)
@@ -88,3 +89,16 @@ bash scripts/run_p1.sh ../../ns-3 5 10
 ~~~
 
 O `run_p1.sh` copia sempre a versão atualizada do programa para o `scratch/` do ns-3 antes de o executar.
+
+## Validar o P1 já executado (sem repetir a simulação)
+
+Após merge da correção do validador:
+
+~~~bash
+git pull
+python3 scripts/test_p1_validation.py
+python3 scripts/review_p1.py --prefix out/p1/v5_stop10_run1 --require-contact
+python3 scripts/plot_p1.py --prefix out/p1/v5_stop10_run1
+~~~
+
+Foi corrigido o nome `received_unique` da coluna no CSV de resumo. A execução C++ reportou 12 000 mensagens geradas, 5 720 aceites na socket e 5 620 recebidas; falta confirmar todos os registos de aplicação e associação no verificador. Ver [resultados provisórios](docs/10_resultados_p1_piloto_v5_stop10.md).
