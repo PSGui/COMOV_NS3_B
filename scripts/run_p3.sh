@@ -3,8 +3,8 @@
 # Scenario source is SEPARATE from the validated P2 120-run program.
 set -euo pipefail
 
-if [[ $# -ne 8 ]]; then
-  echo "Usage: $0 NS3_DIR scenario policy speed stop run pacing_ms buffer_bytes" >&2
+if [[ $# -ne 8 && $# -ne 9 ]]; then
+  echo "Usage: $0 NS3_DIR scenario policy speed stop run pacing_ms buffer_bytes [staticArp=0|1]" >&2
   exit 2
 fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -16,6 +16,7 @@ STOP="$5"
 RUN="$6"
 PACE="$7"
 CAPACITY="$8"
+STATIC_ARP="${9:-0}"
 if [[ ! -x "$NS3_DIR/ns3" || ! -d "$NS3_DIR/scratch" ]]; then
   echo "Invalid ns-3 directory: $NS3_DIR" >&2; exit 2
 fi
@@ -34,6 +35,12 @@ fi
 if [[ "$PACE" != "2" && "$PACE" != "3" ]] || [[ "$CAPACITY" != "4000000" && "$CAPACITY" != "2000000" ]]; then
   echo "P3 pilot pacing=2/3 ms; buffer capacity=2/4 MB" >&2; exit 2
 fi
+if [[ "$STATIC_ARP" != "0" && "$STATIC_ARP" != "1" ]]; then
+  echo "staticArp must be 0/1" >&2; exit 2
+fi
+if [[ "$STATIC_ARP" == "1" && "$SCENARIO" != "fading" ]]; then
+  echo "staticArp diagnostic applies only to fading" >&2; exit 2
+fi
 python3 "$ROOT/scripts/check_wifi_modes.py"
 SRC="$ROOT/src/b10-p3-stress.cc"
 DEST="$NS3_DIR/scratch/b10-p3-stress.cc"
@@ -43,8 +50,11 @@ fi
 cp "$SRC" "$DEST"
 mkdir -p "$ROOT/out/p3"
 PREFIX="$ROOT/out/p3/p3_${SCENARIO}_v${SPEED}_stop${STOP}_run${RUN}_${POLICY}_pace${PACE}_buf${CAPACITY}"
+if [[ "$STATIC_ARP" == "1" ]]; then
+  PREFIX="${PREFIX}_staticarp"
+fi
 echo "P3 output prefix: $PREFIX"
 cd "$NS3_DIR"
-./ns3 run "scratch/b10-p3-stress --scenario=$SCENARIO --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --pacingMs=$PACE --bufferBytes=$CAPACITY --backgroundRateBps=2000000 --prefix=$PREFIX"
+./ns3 run "scratch/b10-p3-stress --scenario=$SCENARIO --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --pacingMs=$PACE --bufferBytes=$CAPACITY --backgroundRateBps=2000000 --staticArp=$STATIC_ARP --prefix=$PREFIX"
 python3 "$ROOT/scripts/review_p3.py" --prefix "$PREFIX"
 echo "P3 validated CSV prefix: $PREFIX"

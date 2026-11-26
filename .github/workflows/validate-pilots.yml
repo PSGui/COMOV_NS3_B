@@ -28,3 +28,5 @@ jobs:
         run: python3 scripts/test_p3_pilots.py
       - name: Check P3 runner shell syntax
         run: bash -n scripts/run_p3.sh
+      - name: Validate P3 ARP radio capture and controlled diagnostic
+        run: python3 scripts/test_p3_arp_diagnostic.py
