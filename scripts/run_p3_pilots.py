@@ -57,6 +57,11 @@ def valid_existing(prefix, scenario, policy, speed, stop, run, pace, capacity):
                  if scenario == "contention" else
                  int(s["background_rate_bps"]) == 0)
             and Path(str(prefix) + "_analysis.json").is_file()
+            and Path(str(prefix) + "_association_raw.csv").is_file()
+            and (scenario != "fading" or all(
+                len(list(prefix.parent.glob(prefix.name + "_pcap_" + radio + "*.pcap"))) == 1
+                for radio in ("ap", "bus")
+            ))
         )
     except (OSError, ValueError, KeyError):
         return False
@@ -99,7 +104,7 @@ def main():
         if (args.skip_existing and valid_existing(
                 prefix, scenario, policy, args.speed, args.stop, args.run,
                 pace, capacity)):
-            execute(sys.executable, "scripts/review_p2.py", "--prefix", prefix)
+            execute(sys.executable, "scripts/review_p3.py", "--prefix", prefix)
         else:
             execute("bash", "scripts/run_p3.sh", ns3, scenario, policy,
                     args.speed, args.stop, args.run, pace, capacity)
