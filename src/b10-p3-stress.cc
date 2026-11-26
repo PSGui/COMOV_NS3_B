@@ -5,6 +5,7 @@
 #include "ns3/core-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/internet-module.h"
+#include "ns3/neighbor-cache-helper.h"
 #include "ns3/mobility-module.h"
 #include "ns3/network-module.h"
 #include "ns3/propagation-module.h"
@@ -485,11 +486,13 @@ main(int argc, char** argv)
     double txDbm{20.0};
     std::string scenario{"reference"};
     uint64_t backgroundRateBps{2000000};
+    bool staticArp{false};
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("prefix", "Output prefix, existing parent directory required", prefix);
     cmd.AddValue("scenario", "reference|fading|contention", scenario);
     cmd.AddValue("backgroundRateBps", "Competing STA offered rate in contention mode", backgroundRateBps);
+    cmd.AddValue("staticArp", "Diagnostic only: prepopulate IPv4 ARP cache in fading case", staticArp);
     cmd.AddValue("policy", "immediate or fifo", policy);
     cmd.AddValue("pacingMs", "FIFO inter-submission interval [ms]", pacingMs);
     cmd.AddValue("bufferBytes", "FIFO capacity in application bytes", bufferLimitBytes);
@@ -512,6 +515,8 @@ main(int argc, char** argv)
                     "--scenario must be reference/fading/contention");
     NS_ABORT_MSG_IF(backgroundRateBps < 1000 || backgroundRateBps > 10000000,
                     "Invalid competing traffic rate");
+    NS_ABORT_MSG_IF(staticArp && scenario != "fading",
+                    "--staticArp is for the fading diagnostic only");
     NS_ABORT_MSG_IF(pacingMs < 0.1 || pacingMs > 100.0 ||
                     bufferLimitBytes < kPayloadBytes ||
                     bufferLimitBytes % kPayloadBytes != 0,
@@ -674,6 +679,15 @@ main(int argc, char** argv)
         wifiDevices.Add(backgroundDevices);
     }
     const Ipv4InterfaceContainer interfaces = addresses.Assign(wifiDevices);
+    // Experimental diagnostic: the failing fading pilot repeatedly sends
+    // ARP requests without completing resolution. Pre-populate neighbor
+    // caches BEFORE any UDP generation to isolate ARP from MAC/PHY delivery.
+    // NEVER enable this in the original P2/reference or ordinary P3 pilots.
+    if (staticArp)
+    {
+        NeighborCacheHelper neighbors;
+        neighbors.PopulateNeighborCache();
+    }
     const Ipv4Address apAddress = interfaces.GetAddress(0);
     g.apIpv4 = apAddress;
 
@@ -758,7 +772,7 @@ main(int argc, char** argv)
                "buffer_remaining,buffer_peak_bytes,buffer_limit_bytes,pacing_ms,"
                "path_loss_exponent,tx_dbm,wifi_standard,frequency_hz,"
                "scenario,background_rate_bps,background_rx_packets,background_rx_bytes,"
-               "ignored_assoc_callbacks,ignored_deassoc_callbacks\n";
+               "ignored_assoc_callbacks,ignored_deassoc_callbacks,static_arp\n";
     summary << std::fixed << std::setprecision(9)
             << speed << ',' << stopSeconds << ',' << apX << ',' << seed << ',' << run
             << ',' << g.generated << ',' << g.dropNoAssociation << ','
@@ -776,9 +790,10 @@ main(int argc, char** argv)
             << exponent << ',' << txDbm << ",802.11g,2412000000,"
             << scenario << ',' << (scenario == "contention" ? backgroundRateBps : 0)
             << ',' << g.backgroundRxPackets << ',' << g.backgroundRxBytes
-            << ',' << g.ignoredAssocCallbacks << ',' << g.ignoredDeassocCallbacks << '\n';
+            << ',' << g.ignoredAssocCallbacks << ',' << g.ignoredDeassocCallbacks
+            << ',' << (staticArp ? 1 : 0) << '\n';
 
-    std::cout << "P3 ns-3.48: scenario=" << g.scenario << ", policy=" << g.policy
+    std::cout << "P3 ns-3.48: scenario=" << g.scenario << ", staticArp=" << (staticArp ? 1 : 0) << ", policy=" << g.policy
               << ", speed=" << speed << " m/s, stop=" << stopSeconds
               << " s, seed=" << seed << ", run=" << run << '\n'
               << "Generated=" << g.generated << ", no-association drops="
