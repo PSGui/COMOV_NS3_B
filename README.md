@@ -28,6 +28,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P3 — auditoria dos oito pilotos e diagnóstico ARP de fading](docs/21_p3_oito_pilotos_auditoria_arp.md)
 - [P3 — ARP estático não resolveu o fading: diagnóstico AP MAC/IP](docs/22_p3_fading_arp_statico_insuficiente_mac_ip.md)
 - [P3 — diagnóstico ACK de associação e variação Nakagami m=3/5](docs/23_p3_fading_assoc_ack_e_severidade.md)
+- [P3 — auditoria m=3/5 e dez repetições emparelhadas dos três testes](docs/24_p3_fading_m5_e_dez_runs_paired.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -263,3 +264,19 @@ python3 scripts/run_p3_fading_severity.py ../../ns-3 --run 1 --skip-existing
 ~~~
 
 Enviar só `out/p3/p3_fading_severity_run1_complete.zip`. Ver [protocolo m=3/5](docs/23_p3_fading_assoc_ack_e_severidade.md). Código C++ com esta alteração ainda exige compilação real no ns-3.48 local; GitHub CI verifica apenas estrutura e scripts.
+
+## P3 — Três testes críticos com 10 runs emparelhadas
+
+O ZIP `p3_fading_severity_run1_complete.zip` foi auditado (97/97 hashes). A 15 m/s, stop=0, **Nakagami m=5 com ARP dinâmico** entregou **1666 mensagens imediatas e 5412 FIFO**, ganho de **+3746 mensagens / +31,217 pp**, com goodput no prazo por segundo associado de 0,766/2,459 Mbit/s. A m=3 com ARP dinâmico houve **zero UDP em ambas as políticas**, pois as capturas mostram pedidos ARP sem respostas e sem IPv4; com ARP pré-configurado foram recebidas 1555/5028. O resultado m=3 com ligação falhada **não demonstra** equivalência entre FIFO e envio imediato. Ver [análise completa](docs/24_p3_fading_m5_e_dez_runs_paired.md).
+
+Para obter uma conclusão com intervalos de confiança do **modelo ns-3**, repetir 10 vezes os três testes, mantendo a P2 sem alterações. O script executa 8 configurações/run: controlo immediate/FIFO, fading **m=5 com ARP dinâmico** immediate/FIFO, concorrência 2 Mbit/s immediate/FIFO e variantes FIFO com pacing 3 ms ou capacidade 2 MB. O P3 controlo é confrontado com o mesmo run da P2. Runs com zero UDP são **incluídas e assinaladas**, não removidas do resultado.
+
+~~~bash
+cd ~/COMOV/Project_B/COMOV_NS3_B
+git pull
+python3 scripts/test_p3_repeated_tests.py
+python3 scripts/run_p3_repeated_tests.py ../../ns-3 --start-run 1 --end-run 10 --skip-existing
+python3 scripts/pack_p3_repeated_tests.py --start-run 1 --end-run 10
+~~~
+
+Enviar apenas `out/p3/p3_repeated_runs1-10_complete.zip`, com os CSV/JSON dos 80 ensaios, sumários P2 de controlo, comparações emparelhadas, IC95%, PCAP pertinentes e manifest SHA-256. Os primeiros 8 resultados já foram feitos; restam **72 simulações**, sujeitas a compilação/teste no ns-3.48 local.
