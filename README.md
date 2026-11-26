@@ -24,6 +24,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P2 — resultados estatísticos das 10 runs e IC95%](docs/16_resultados_estatisticos_10_runs.md)
 - [B10 — aproveitamento do contacto Wi-Fi e robustez ao deslocar AP](docs/17_contact_utilisation_and_ap_robustness.md)
 - [B10 — auditoria dos 120 contactos e piloto AP ±30 m](docs/18_auditoria_contacto_wifi_e_robustez_piloto.md)
+- [P3 — três testes críticos: fading, tráfego concorrente, buffer/pacing](docs/19_p3_tres_testes_criticos.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -196,3 +197,21 @@ python3 scripts/run_p2_ap_robustness.py ../../ns-3 --start-run 1 --end-run 1 --s
 ~~~
 
 O protocolo e as ressalvas estão em [docs/17_contact_utilisation_and_ap_robustness.md](docs/17_contact_utilisation_and_ap_robustness.md). A política FIFO simulada **expira mensagens na fila aos 60 s**: não confundir com uma política que transmita mensagens já fora do prazo.
+
+## P3 — Três cenários para testar os limites da vantagem FIFO
+
+**Pergunta do enunciado:** *Find out whether storing data on the bus makes better use of Wi-Fi contact at a stop.* P2 já demonstrou ganho numa baseline sem fading nem tráfego concorrente; P3 investiga **quando essa vantagem diminui ou falha**. Não alterar nem repetir a baseline de 120 runs.
+
+O P3 está isolado no código `src/b10-p3-stress.cc` e nos CSV da pasta `out/p3/`. Cada piloto usa **15 m/s, paragem 0 s, run=1**. O executador corre **8 simulações**: duas de controlo (para confirmar reprodução exata da P2); duas com Nakagami m=1; duas com outra STA a oferecer UDP 2 Mbit/s; e duas variantes FIFO separadas (pacing 3 ms/4 MB ou pacing 2 ms/2 MB). O P3 é código novo e precisa de validação C++ no ns-3.48 do grupo; GitHub Actions não compila ns-3.
+
+Depois de integrar o PR:
+
+~~~bash
+cd ~/COMOV/Project_B/COMOV_NS3_B
+git pull
+python3 scripts/test_p3_pilots.py
+python3 scripts/run_p3_pilots.py ../../ns-3 --speed 15 --stop 0 --run 1 --skip-existing
+python3 scripts/pack_p3_results.py --speed 15 --stop 0 --run 1
+~~~
+
+**Único ficheiro a enviar:** `out/p3/p3_pilots_v15_stop0_run1_complete.zip`, que contém os CSV, os resumos e o manifesto SHA-256. Se o C++ não compilar, enviar o **erro completo do compilador**. O executor interrompe-se caso o controlo P3 não reproduza a P2 ou o AP não receba tráfego concorrente. O relatório de objetivos, hipóteses, parâmetros e resultados esperados está em [docs/19_p3_tres_testes_criticos.md](docs/19_p3_tres_testes_criticos.md).
