@@ -26,6 +26,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [B10 — auditoria dos 120 contactos e piloto AP ±30 m](docs/18_auditoria_contacto_wifi_e_robustez_piloto.md)
 - [P3 — três testes críticos: fading, tráfego concorrente, buffer/pacing](docs/19_p3_tres_testes_criticos.md)
 - [P3 — auditoria dos oito pilotos e diagnóstico ARP de fading](docs/21_p3_oito_pilotos_auditoria_arp.md)
+- [P3 — ARP estático não resolveu o fading: diagnóstico AP MAC/IP](docs/22_p3_fading_arp_statico_insuficiente_mac_ip.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -231,3 +232,18 @@ python3 scripts/run_p3_arp_diagnostic.py ../../ns-3 --run 1 --skip-existing
 ~~~
 
 Enviar apenas `out/p3/p3_fading_arp_diagnostic_run1_complete.zip`, que contém os CSV, os PCAP e o manifesto SHA-256 do controlo ARP dinâmico vs estático. O controlo precisa ainda de compilação C++ e execução no WSL; a CI só verifica a parte Python e sintaxe Bash.
+
+## P3 — Diagnóstico ARP estático: zero UDP apesar de tráfego 802.11 IPv4
+
+Os resultados reais de `p3_fading_arp_diagnostic_run1_complete.zip` foram verificados (45/45 hashes): com ARP pré-configurado, **immediate 1814 aceites e 0 recebidos, FIFO 5891 aceites e 0 recebidos**. Os PCAP no AP já registam **2303 / 5246 frames Wi-Fi IPv4/UDP**, respetivamente, dirigidos a 10.8.0.1:9010. A resolução ARP já não é a explicação suficiente para as zero receções. As experiências B/C continuam válidas como pilotos; A permanece bloqueada e não pode gerar IC95% científicos.
+
+O próximo controlo só acrescenta contadores e amostragem **passiva** dos traces AP MAC/IP e estado de associação do AP; executa duas novas runs com sufixos independentes `_staticarp_macdiag`:
+
+~~~bash
+cd ~/COMOV/Project_B/COMOV_NS3_B
+git pull
+python3 scripts/test_p3_mac_path_diagnostic.py
+python3 scripts/run_p3_mac_path_diagnostic.py ../../ns-3 --run 1 --skip-existing
+~~~
+
+Enviar só `out/p3/p3_fading_mac_path_run1_complete.zip`. Ver [protocolo MAC/IP](docs/22_p3_fading_arp_statico_insuficiente_mac_ip.md). O novo C++ precisa ainda de compilar no WSL; GitHub Actions não executa ns-3.
