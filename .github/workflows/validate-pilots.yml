@@ -32,3 +32,5 @@ jobs:
         run: python3 scripts/test_p3_arp_diagnostic.py
       - name: Validate P3 MAC/IP diagnostic trace configuration
         run: python3 scripts/test_p3_mac_path_diagnostic.py
+      - name: Validate P3 fading severity experiment and isolated filenames
+        run: python3 scripts/test_p3_fading_severity.py

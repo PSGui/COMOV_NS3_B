@@ -27,6 +27,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P3 — três testes críticos: fading, tráfego concorrente, buffer/pacing](docs/19_p3_tres_testes_criticos.md)
 - [P3 — auditoria dos oito pilotos e diagnóstico ARP de fading](docs/21_p3_oito_pilotos_auditoria_arp.md)
 - [P3 — ARP estático não resolveu o fading: diagnóstico AP MAC/IP](docs/22_p3_fading_arp_statico_insuficiente_mac_ip.md)
+- [P3 — diagnóstico ACK de associação e variação Nakagami m=3/5](docs/23_p3_fading_assoc_ack_e_severidade.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -247,3 +248,18 @@ python3 scripts/run_p3_mac_path_diagnostic.py ../../ns-3 --run 1 --skip-existing
 ~~~
 
 Enviar só `out/p3/p3_fading_mac_path_run1_complete.zip`. Ver [protocolo MAC/IP](docs/22_p3_fading_arp_statico_insuficiente_mac_ip.md). O novo C++ precisa ainda de compilar no WSL; GitHub Actions não executa ns-3.
+
+## P3 — AP não confirma associação sob Nakagami m=1
+
+O último ZIP `p3_fading_mac_path_run1_complete.zip` passou nos 33/33 hashes. Com fading Nakagami m=1 e ARP pré-configurado, o autocarro submeteu 1814 (immediate) ou 5891 (FIFO) pacotes à MAC, mas o AP registou **1740/4829 MacRxDrop**, **zero MacRx/IPv4/UDP** e **zero amostras de AP a reconhecer a STA como associada** (apesar de esta se considerar associada durante ~18 s). O PCAP do AP mostra retransmissões de Association Responses sem ACK observado no AP. Isto é consistente com o mecanismo ns-3.48 que só confirma associação no AP quando recebe ACK da Association Response. Ainda não é uma comparação válida de desempenho da FIFO.
+
+Para identificar as condições de contacto utilizável, preparar **8 pilotos adicionais** com Nakagami m=3 e m=5, com/sem ARP pré-configurado, policies immediate/FIFO e run=1; sem apagar os resultados de m=1:
+
+~~~bash
+cd ~/COMOV/Project_B/COMOV_NS3_B
+git pull
+python3 scripts/test_p3_fading_severity.py
+python3 scripts/run_p3_fading_severity.py ../../ns-3 --run 1 --skip-existing
+~~~
+
+Enviar só `out/p3/p3_fading_severity_run1_complete.zip`. Ver [protocolo m=3/5](docs/23_p3_fading_assoc_ack_e_severidade.md). Código C++ com esta alteração ainda exige compilação real no ns-3.48 local; GitHub CI verifica apenas estrutura e scripts.

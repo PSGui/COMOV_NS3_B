@@ -67,6 +67,7 @@ struct Pilot
     double stopSeconds{10.0};
     double apX{0.0};
     double txDbm{20.0};
+    double fadingM{1.0};
     std::string scenario{"reference"};
     uint64_t backgroundRateBps{2000000};
     uint64_t backgroundRxPackets{0};
@@ -532,6 +533,7 @@ main(int argc, char** argv)
     double apX{0.0};
     double exponent{3.0};
     double txDbm{20.0};
+    double fadingM{1.0};
     std::string scenario{"reference"};
     uint64_t backgroundRateBps{2000000};
     bool staticArp{false};
@@ -542,6 +544,7 @@ main(int argc, char** argv)
     cmd.AddValue("scenario", "reference|fading|contention", scenario);
     cmd.AddValue("backgroundRateBps", "Competing STA offered rate in contention mode", backgroundRateBps);
     cmd.AddValue("staticArp", "Diagnostic only: prepopulate IPv4 ARP cache in fading case", staticArp);
+    cmd.AddValue("fadingM", "Nakagami severity m (1 Rayleigh, 3 or 5 less severe)", fadingM);
     cmd.AddValue("macDiagnostics", "Diagnostic only: record AP MAC/IP forwarding with fading+static ARP", macDiagnostics);
     cmd.AddValue("policy", "immediate or fifo", policy);
     cmd.AddValue("pacingMs", "FIFO inter-submission interval [ms]", pacingMs);
@@ -567,6 +570,10 @@ main(int argc, char** argv)
                     "Invalid competing traffic rate");
     NS_ABORT_MSG_IF(staticArp && scenario != "fading",
                     "--staticArp is for the fading diagnostic only");
+    NS_ABORT_MSG_IF(!(fadingM == 1.0 || fadingM == 3.0 || fadingM == 5.0),
+                    "--fadingM allowed values are 1, 3, 5");
+    NS_ABORT_MSG_IF(scenario != "fading" && fadingM != 1.0,
+                    "--fadingM can only differ from 1 in fading scenario");
     NS_ABORT_MSG_IF(macDiagnostics && !(scenario == "fading" && staticArp),
                     "--macDiagnostics requires --scenario=fading --staticArp=1");
     NS_ABORT_MSG_IF(pacingMs < 0.1 || pacingMs > 100.0 ||
@@ -578,6 +585,7 @@ main(int argc, char** argv)
     g.stopSeconds = stopSeconds;
     g.apX = apX;
     g.txDbm = txDbm;
+    g.fadingM = fadingM;
     g.scenario = scenario;
     g.macDiagnostics = macDiagnostics;
     g.backgroundRateBps = backgroundRateBps;
@@ -651,12 +659,12 @@ main(int argc, char** argv)
     g.monitorLoss->SetAttribute("ReferenceLoss", DoubleValue(referenceLoss));
     if (scenario == "fading")
     {
-        // Rayleigh small-scale fading: Nakagami m=1 at all distances.
-        // This is a declared stress test, not a calibrated real street.
+        // Configurable Nakagami m at all distances: m=1 severe Rayleigh-like,
+        // m=3 or m=5 less severe. No calibrated road channel claimed.
         auto fading = CreateObject<NakagamiPropagationLossModel>();
-        fading->SetAttribute("m0", DoubleValue(1.0));
-        fading->SetAttribute("m1", DoubleValue(1.0));
-        fading->SetAttribute("m2", DoubleValue(1.0));
+        fading->SetAttribute("m0", DoubleValue(fadingM));
+        fading->SetAttribute("m1", DoubleValue(fadingM));
+        fading->SetAttribute("m2", DoubleValue(fadingM));
         g.loss->SetNext(fading);
     }
 
@@ -861,7 +869,7 @@ main(int argc, char** argv)
                "buffer_remaining,buffer_peak_bytes,buffer_limit_bytes,pacing_ms,"
                "path_loss_exponent,tx_dbm,wifi_standard,frequency_hz,"
                "scenario,background_rate_bps,background_rx_packets,background_rx_bytes,"
-               "ignored_assoc_callbacks,ignored_deassoc_callbacks,static_arp\n";
+               "ignored_assoc_callbacks,ignored_deassoc_callbacks,static_arp,fading_m\n";
     summary << std::fixed << std::setprecision(9)
             << speed << ',' << stopSeconds << ',' << apX << ',' << seed << ',' << run
             << ',' << g.generated << ',' << g.dropNoAssociation << ','
@@ -880,7 +888,7 @@ main(int argc, char** argv)
             << scenario << ',' << (scenario == "contention" ? backgroundRateBps : 0)
             << ',' << g.backgroundRxPackets << ',' << g.backgroundRxBytes
             << ',' << g.ignoredAssocCallbacks << ',' << g.ignoredDeassocCallbacks
-            << ',' << (staticArp ? 1 : 0) << '\n';
+            << ',' << (staticArp ? 1 : 0) << ',' << fadingM << '\n';
 
     if (macDiagnostics)
     {
@@ -902,7 +910,7 @@ main(int argc, char** argv)
                   << ", busMacTx=" << g.busMacTx << '\n';
     }
 
-    std::cout << "P3 ns-3.48: scenario=" << g.scenario << ", staticArp=" << (staticArp ? 1 : 0) << ", policy=" << g.policy
+    std::cout << "P3 ns-3.48: scenario=" << g.scenario << ", fadingM=" << g.fadingM << ", staticArp=" << (staticArp ? 1 : 0) << ", policy=" << g.policy
               << ", speed=" << speed << " m/s, stop=" << stopSeconds
               << " s, seed=" << seed << ", run=" << run << '\n'
               << "Generated=" << g.generated << ", no-association drops="

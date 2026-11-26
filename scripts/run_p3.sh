@@ -3,8 +3,8 @@
 # Scenario source is SEPARATE from the validated P2 120-run program.
 set -euo pipefail
 
-if [[ $# -lt 8 || $# -gt 10 ]]; then
-  echo "Usage: $0 NS3_DIR scenario policy speed stop run pacing_ms buffer_bytes [staticArp=0|1] [macDiagnostics=0|1]" >&2
+if [[ $# -lt 8 || $# -gt 11 ]]; then
+  echo "Usage: $0 NS3_DIR scenario policy speed stop run pacing_ms buffer_bytes [staticArp=0|1] [macDiagnostics=0|1] [fadingM=1|3|5]" >&2
   exit 2
 fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -18,6 +18,7 @@ PACE="$7"
 CAPACITY="$8"
 STATIC_ARP="${9:-0}"
 MAC_DIAG="${10:-0}"
+FADING_M="${11:-1}"
 if [[ ! -x "$NS3_DIR/ns3" || ! -d "$NS3_DIR/scratch" ]]; then
   echo "Invalid ns-3 directory: $NS3_DIR" >&2; exit 2
 fi
@@ -48,6 +49,12 @@ fi
 if [[ "$MAC_DIAG" == "1" && ( "$STATIC_ARP" != "1" || "$SCENARIO" != "fading" ) ]]; then
   echo "macDiagnostics requires fading with staticArp=1" >&2; exit 2
 fi
+if [[ "$FADING_M" != "1" && "$FADING_M" != "3" && "$FADING_M" != "5" ]]; then
+  echo "fadingM must be 1/3/5" >&2; exit 2
+fi
+if [[ "$FADING_M" != "1" && "$SCENARIO" != "fading" ]]; then
+  echo "fadingM 3/5 applies only to fading" >&2; exit 2
+fi
 python3 "$ROOT/scripts/check_wifi_modes.py"
 SRC="$ROOT/src/b10-p3-stress.cc"
 DEST="$NS3_DIR/scratch/b10-p3-stress.cc"
@@ -63,8 +70,11 @@ fi
 if [[ "$MAC_DIAG" == "1" ]]; then
   PREFIX="${PREFIX}_macdiag"
 fi
+if [[ "$FADING_M" != "1" ]]; then
+  PREFIX="${PREFIX}_m${FADING_M}"
+fi
 echo "P3 output prefix: $PREFIX"
 cd "$NS3_DIR"
-./ns3 run "scratch/b10-p3-stress --scenario=$SCENARIO --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --pacingMs=$PACE --bufferBytes=$CAPACITY --backgroundRateBps=2000000 --staticArp=$STATIC_ARP --macDiagnostics=$MAC_DIAG --prefix=$PREFIX"
+./ns3 run "scratch/b10-p3-stress --scenario=$SCENARIO --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --pacingMs=$PACE --bufferBytes=$CAPACITY --backgroundRateBps=2000000 --staticArp=$STATIC_ARP --macDiagnostics=$MAC_DIAG --fadingM=$FADING_M --prefix=$PREFIX"
 python3 "$ROOT/scripts/review_p3.py" --prefix "$PREFIX"
 echo "P3 validated CSV prefix: $PREFIX"
