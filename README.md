@@ -25,6 +25,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [B10 — aproveitamento do contacto Wi-Fi e robustez ao deslocar AP](docs/17_contact_utilisation_and_ap_robustness.md)
 - [B10 — auditoria dos 120 contactos e piloto AP ±30 m](docs/18_auditoria_contacto_wifi_e_robustez_piloto.md)
 - [P3 — três testes críticos: fading, tráfego concorrente, buffer/pacing](docs/19_p3_tres_testes_criticos.md)
+- [P3 — auditoria dos oito pilotos e diagnóstico ARP de fading](docs/21_p3_oito_pilotos_auditoria_arp.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -215,3 +216,18 @@ python3 scripts/pack_p3_results.py --speed 15 --stop 0 --run 1
 ~~~
 
 **Único ficheiro a enviar:** `out/p3/p3_pilots_v15_stop0_run1_complete.zip`, que contém os CSV, os resumos e o manifesto SHA-256. Se o C++ não compilar, enviar o **erro completo do compilador**. O executor interrompe-se caso o controlo P3 não reproduza a P2 ou o AP não receba tráfego concorrente. O relatório de objetivos, hipóteses, parâmetros e resultados esperados está em [docs/19_p3_tres_testes_criticos.md](docs/19_p3_tres_testes_criticos.md).
+
+## P3 — Pilotos executados e diagnóstico do fading (26/11/2026)
+
+O ZIP real `p3_pilots_v15_stop0_run1_complete.zip` foi auditado (80/80 hashes de ficheiros válidos). A referência P3 reproduziu P2 exatamente, 1533 mensagens imediatas e 5530 FIFO entregues. Na concorrência (STA extra a oferecer 2 Mbit/s), a FIFO recebeu 4263 mensagens e o imediato 1519; o AP recebeu 32499 datagramas da STA concorrente. Reduzir FIFO a 2 MB entregou 3530; aumentar pacing para 3 ms, com 4 MB, entregou 5109. Ver [relatório P3](docs/21_p3_oito_pilotos_auditoria_arp.md).
+
+**Atenção à Experiência A:** com Nakagami m=1, ambos os modos apresentaram 0 receções UDP apesar de 1829/5835 `SendTo` aceites. A análise dos PCAP mostrou **28 ARP Request capturadas no autocarro e 9 no AP, nenhuma ARP Reply e nenhuma trama IPv4**. O problema imediato é a resolução ARP incompleta; não reportar estes zeros como perda por fading. Introduziu-se um controlo *exclusivamente de diagnóstico*: `--staticArp=1` apenas no cenário fading, mantendo o parâmetro omisso/falso no P3 e em toda a P2.
+
+~~~bash
+cd ~/COMOV/Project_B/COMOV_NS3_B
+git pull
+python3 scripts/test_p3_arp_diagnostic.py
+python3 scripts/run_p3_arp_diagnostic.py ../../ns-3 --run 1 --skip-existing
+~~~
+
+Enviar apenas `out/p3/p3_fading_arp_diagnostic_run1_complete.zip`, que contém os CSV, os PCAP e o manifesto SHA-256 do controlo ARP dinâmico vs estático. O controlo precisa ainda de compilação C++ e execução no WSL; a CI só verifica a parte Python e sintaxe Bash.
