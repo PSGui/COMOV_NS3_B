@@ -24,3 +24,7 @@ jobs:
         run: python3 scripts/test_p2_contact.py
       - name: Check ns-3 runner shell syntax
         run: bash -n scripts/run_p2.sh
+      - name: Test P3 pilot matrix and independent stress source
+        run: python3 scripts/test_p3_pilots.py
+      - name: Check P3 runner shell syntax
+        run: bash -n scripts/run_p3.sh
