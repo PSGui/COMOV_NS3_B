@@ -36,6 +36,7 @@ constexpr double kStopAtS = 70.0;
 constexpr double kObserveUntilS = 200.0;
 constexpr double kDeadlineS = 60.0;
 constexpr uint16_t kUdpPort = 9010;
+constexpr uint16_t kBackgroundUdpPort = 9011;
 
 struct BufferedMessage
 {
@@ -49,12 +50,17 @@ struct Pilot
     Ptr<ConstantPositionMobilityModel> ap;
     Ptr<StaWifiMac> mac;
     Ptr<LogDistancePropagationLossModel> loss;
+    Ptr<LogDistancePropagationLossModel> monitorLoss;
     Ptr<Socket> sender;
     Ipv4Address apIpv4;
     double speed{5.0};
     double stopSeconds{10.0};
     double apX{0.0};
     double txDbm{20.0};
+    std::string scenario{"reference"};
+    uint64_t backgroundRateBps{2000000};
+    uint64_t backgroundRxPackets{0};
+    uint64_t backgroundRxBytes{0};
     uint32_t generated{0};
     uint32_t dropNoAssociation{0};
     uint32_t socketRejected{0};
@@ -158,7 +164,8 @@ RecordMobility()
     const auto pos = g.bus->GetPosition();
     const auto velocity = g.bus->GetVelocity();
     const bool associated = g.mac->IsAssociated();
-    const double predictedRxDbm = g.loss->CalcRxPower(g.txDbm, g.ap, g.bus);
+    // Never consume fading RNG for telemetry at 4Hz. Monitor only log-distance.
+    const double predictedRxDbm = g.monitorLoss->CalcRxPower(g.txDbm, g.ap, g.bus);
     g.mobilityCsv << Simulator::Now().GetSeconds() << ',' << pos.x << ','
                   << velocity.x << ',' << Distance3d() << ','
                   << (associated ? 1 : 0) << ',' << predictedRxDbm << '\n';
@@ -364,6 +371,17 @@ Generate(uint64_t sequence, Ipv4Address apAddress)
 }
 
 void
+OnBackgroundDatagram(Ptr<Socket> receiver)
+{
+    Address from;
+    while (auto packet = receiver->RecvFrom(from))
+    {
+        ++g.backgroundRxPackets;
+        g.backgroundRxBytes += packet->GetSize();
+    }
+}
+
+void
 OnDatagram(Ptr<Socket> receiver)
 {
     Address from;
@@ -443,9 +461,13 @@ main(int argc, char** argv)
     double apX{0.0};
     double exponent{3.0};
     double txDbm{20.0};
+    std::string scenario{"reference"};
+    uint64_t backgroundRateBps{2000000};
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("prefix", "Output prefix, existing parent directory required", prefix);
+    cmd.AddValue("scenario", "reference|fading|contention", scenario);
+    cmd.AddValue("backgroundRateBps", "Competing STA offered rate in contention mode", backgroundRateBps);
     cmd.AddValue("policy", "immediate or fifo", policy);
     cmd.AddValue("pacingMs", "FIFO inter-submission interval [ms]", pacingMs);
     cmd.AddValue("bufferBytes", "FIFO capacity in application bytes", bufferLimitBytes);
@@ -464,6 +486,10 @@ main(int argc, char** argv)
     NS_ABORT_MSG_IF(exponent <= 0.0 || run == 0, "Invalid exponent or RNG run");
     NS_ABORT_MSG_IF(policy != "fifo" && policy != "immediate",
                     "--policy must be fifo or immediate");
+    NS_ABORT_MSG_IF(scenario != "reference" && scenario != "fading" && scenario != "contention",
+                    "--scenario must be reference/fading/contention");
+    NS_ABORT_MSG_IF(backgroundRateBps < 1000 || backgroundRateBps > 10000000,
+                    "Invalid competing traffic rate");
     NS_ABORT_MSG_IF(pacingMs < 0.1 || pacingMs > 100.0 ||
                     bufferLimitBytes < kPayloadBytes ||
                     bufferLimitBytes % kPayloadBytes != 0,
@@ -473,6 +499,8 @@ main(int argc, char** argv)
     g.stopSeconds = stopSeconds;
     g.apX = apX;
     g.txDbm = txDbm;
+    g.scenario = scenario;
+    g.backgroundRateBps = backgroundRateBps;
     g.policy = policy;
     g.pacingMs = pacingMs;
     g.bufferLimitBytes = bufferLimitBytes;
