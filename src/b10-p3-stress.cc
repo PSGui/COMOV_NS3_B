@@ -50,6 +50,15 @@ struct Pilot
     Ptr<ConstantVelocityMobilityModel> bus;
     Ptr<ConstantPositionMobilityModel> ap;
     Ptr<StaWifiMac> mac;
+    Ptr<ApWifiMac> apMac;
+    Mac48Address busMacAddress;
+    bool macDiagnostics{false};
+    uint64_t apMacRx{0};
+    uint64_t apMacRxDrop{0};
+    uint64_t apMacPromiscRx{0};
+    uint64_t busMacTx{0};
+    uint64_t apIpv4Rx{0};
+    std::ofstream macDiagnosticsCsv;
     Ptr<LogDistancePropagationLossModel> loss;
     Ptr<LogDistancePropagationLossModel> monitorLoss;
     Ptr<Socket> sender;
@@ -181,12 +190,51 @@ OnDisassociation(Mac48Address apMac)
                      << g.bus->GetPosition().x << ',' << Distance3d() << '\n';
 }
 
+// Passive upper-MAC and IPv4 trace points, enabled ONLY for fading+static
+// ARP diagnosis. PCAP captures monitor-mode frames, not proof of IPv4 delivery.
+void
+OnApMacRx(Ptr<const Packet>)
+{
+    ++g.apMacRx;
+}
+void
+OnApMacRxDrop(Ptr<const Packet>)
+{
+    ++g.apMacRxDrop;
+}
+void
+OnApMacPromiscRx(Ptr<const Packet>)
+{
+    ++g.apMacPromiscRx;
+}
+void
+OnBusMacTx(Ptr<const Packet>)
+{
+    ++g.busMacTx;
+}
+void
+OnApIpv4Rx(Ptr<const Packet>, Ptr<Ipv4>, uint32_t)
+{
+    ++g.apIpv4Rx;
+}
+
 void
 RecordMobility()
 {
     const auto pos = g.bus->GetPosition();
     const auto velocity = g.bus->GetVelocity();
     const bool associated = g.mac->IsAssociated();
+    if (g.macDiagnostics)
+    {
+        const bool apRecognizesBus = g.apMac->IsAssociated(
+            g.busMacAddress).has_value();
+        g.macDiagnosticsCsv << Simulator::Now().GetSeconds() << ','
+                            << (associated ? 1 : 0) << ','
+                            << (apRecognizesBus ? 1 : 0) << ','
+                            << g.apMacRx << ',' << g.apMacPromiscRx << ','
+                            << g.apMacRxDrop << ',' << g.busMacTx << ','
+                            << g.apIpv4Rx << ',' << g.uniqueReceived << '\n';
+    }
     // Never consume fading RNG for telemetry at 4Hz. Monitor only log-distance.
     const double predictedRxDbm = g.monitorLoss->CalcRxPower(g.txDbm, g.ap, g.bus);
     g.mobilityCsv << Simulator::Now().GetSeconds() << ',' << pos.x << ','
@@ -487,12 +535,14 @@ main(int argc, char** argv)
     std::string scenario{"reference"};
     uint64_t backgroundRateBps{2000000};
     bool staticArp{false};
+    bool macDiagnostics{false};
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("prefix", "Output prefix, existing parent directory required", prefix);
     cmd.AddValue("scenario", "reference|fading|contention", scenario);
     cmd.AddValue("backgroundRateBps", "Competing STA offered rate in contention mode", backgroundRateBps);
     cmd.AddValue("staticArp", "Diagnostic only: prepopulate IPv4 ARP cache in fading case", staticArp);
+    cmd.AddValue("macDiagnostics", "Diagnostic only: record AP MAC/IP forwarding with fading+static ARP", macDiagnostics);
     cmd.AddValue("policy", "immediate or fifo", policy);
     cmd.AddValue("pacingMs", "FIFO inter-submission interval [ms]", pacingMs);
     cmd.AddValue("bufferBytes", "FIFO capacity in application bytes", bufferLimitBytes);
@@ -517,6 +567,8 @@ main(int argc, char** argv)
                     "Invalid competing traffic rate");
     NS_ABORT_MSG_IF(staticArp && scenario != "fading",
                     "--staticArp is for the fading diagnostic only");
+    NS_ABORT_MSG_IF(macDiagnostics && !(scenario == "fading" && staticArp),
+                    "--macDiagnostics requires --scenario=fading --staticArp=1");
     NS_ABORT_MSG_IF(pacingMs < 0.1 || pacingMs > 100.0 ||
                     bufferLimitBytes < kPayloadBytes ||
                     bufferLimitBytes % kPayloadBytes != 0,
@@ -527,6 +579,7 @@ main(int argc, char** argv)
     g.apX = apX;
     g.txDbm = txDbm;
     g.scenario = scenario;
+    g.macDiagnostics = macDiagnostics;
     g.backgroundRateBps = backgroundRateBps;
     g.policy = policy;
     g.pacingMs = pacingMs;
@@ -549,6 +602,13 @@ main(int argc, char** argv)
             "t_s,seq,event,queued_messages,queued_bytes,associated,age_s,send_return");
     OpenCsv(g.sentCsv, prefix + "_sent.csv",
             "seq,t_gen_s,t_socket_s,age_at_send_s,send_return,policy");
+    if (macDiagnostics)
+    {
+        OpenCsv(g.macDiagnosticsCsv, prefix + "_mac_path.csv",
+                "t_s,sta_associated,ap_recognizes_bus,ap_mac_rx,"
+                "ap_mac_promisc_rx,ap_mac_rx_drop,bus_mac_tx,"
+                "ap_ipv4_rx,ap_udp_unique_received");
+    }
 
     NodeContainer apNode;
     NodeContainer busNode;
@@ -652,6 +712,28 @@ main(int argc, char** argv)
         phy.EnablePcap(prefix + "_pcap_bus", busDevices);
     }
 
+    if (macDiagnostics)
+    {
+        auto apWifi = DynamicCast<WifiNetDevice>(apDevices.Get(0));
+        auto busWifi = DynamicCast<WifiNetDevice>(busDevices.Get(0));
+        g.apMac = DynamicCast<ApWifiMac>(apWifi->GetMac());
+        g.busMacAddress = Mac48Address::ConvertFrom(
+            busDevices.Get(0)->GetAddress());
+        NS_ABORT_MSG_IF(!g.apMac, "Missing AP MAC for P3 trace diagnostics");
+        NS_ABORT_MSG_IF(!g.apMac->TraceConnectWithoutContext(
+                            "MacRx", MakeCallback(&OnApMacRx)),
+                        "Cannot connect AP MacRx trace");
+        NS_ABORT_MSG_IF(!g.apMac->TraceConnectWithoutContext(
+                            "MacRxDrop", MakeCallback(&OnApMacRxDrop)),
+                        "Cannot connect AP MacRxDrop trace");
+        NS_ABORT_MSG_IF(!g.apMac->TraceConnectWithoutContext(
+                            "MacPromiscRx", MakeCallback(&OnApMacPromiscRx)),
+                        "Cannot connect AP MacPromiscRx trace");
+        NS_ABORT_MSG_IF(!busWifi->GetMac()->TraceConnectWithoutContext(
+                            "MacTx", MakeCallback(&OnBusMacTx)),
+                        "Cannot connect bus MacTx trace");
+    }
+
     g.mac = DynamicCast<StaWifiMac>(DynamicCast<WifiNetDevice>(
         busDevices.Get(0))->GetMac());
     NS_ABORT_MSG_IF(!g.mac, "Cannot access StaWifiMac for association trace");
@@ -664,6 +746,13 @@ main(int argc, char** argv)
 
     InternetStackHelper internet;
     internet.Install(apNode);
+    if (macDiagnostics)
+    {
+        auto apIpv4 = apNode.Get(0)->GetObject<Ipv4L3Protocol>();
+        NS_ABORT_MSG_IF(!apIpv4->TraceConnectWithoutContext(
+                            "Rx", MakeCallback(&OnApIpv4Rx)),
+                        "Cannot connect AP IPv4 Rx trace");
+    }
     internet.Install(busNode);
     if (scenario == "contention")
     {
@@ -792,6 +881,26 @@ main(int argc, char** argv)
             << ',' << g.backgroundRxPackets << ',' << g.backgroundRxBytes
             << ',' << g.ignoredAssocCallbacks << ',' << g.ignoredDeassocCallbacks
             << ',' << (staticArp ? 1 : 0) << '\n';
+
+    if (macDiagnostics)
+    {
+        std::ofstream macSummary(prefix + "_mac_path_summary.csv");
+        NS_ABORT_MSG_IF(!macSummary.is_open(), "Cannot write AP MAC path summary");
+        macSummary << "run,policy,sta_associated_at_end,ap_recognizes_bus_at_end,"
+                      "ap_mac_rx,ap_mac_promisc_rx,ap_mac_rx_drop,"
+                      "bus_mac_tx,ap_ipv4_rx,ap_udp_received\n";
+        macSummary << run << ',' << policy << ','
+                   << (g.mac->IsAssociated() ? 1 : 0) << ','
+                   << (g.apMac->IsAssociated(g.busMacAddress).has_value() ? 1 : 0)
+                   << ',' << g.apMacRx << ',' << g.apMacPromiscRx << ','
+                   << g.apMacRxDrop << ',' << g.busMacTx << ','
+                   << g.apIpv4Rx << ',' << g.uniqueReceived << '\n';
+        std::cout << "P3 AP MAC-path diagnostics: macRx=" << g.apMacRx
+                  << ", promiscRx=" << g.apMacPromiscRx
+                  << ", macRxDrop=" << g.apMacRxDrop
+                  << ", apIpv4Rx=" << g.apIpv4Rx
+                  << ", busMacTx=" << g.busMacTx << '\n';
+    }
 
     std::cout << "P3 ns-3.48: scenario=" << g.scenario << ", staticArp=" << (staticArp ? 1 : 0) << ", policy=" << g.policy
               << ", speed=" << speed << " m/s, stop=" << stopSeconds
