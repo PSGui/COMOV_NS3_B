@@ -29,6 +29,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P3 — ARP estático não resolveu o fading: diagnóstico AP MAC/IP](docs/22_p3_fading_arp_statico_insuficiente_mac_ip.md)
 - [P3 — diagnóstico ACK de associação e variação Nakagami m=3/5](docs/23_p3_fading_assoc_ack_e_severidade.md)
 - [P3 — auditoria m=3/5 e dez repetições emparelhadas dos três testes](docs/24_p3_fading_m5_e_dez_runs_paired.md)
+- [P3 — auditoria final de 80 simulações, IC95%, limites científicos](docs/25_p3_auditoria_final_80_simulacoes.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -280,3 +281,21 @@ python3 scripts/pack_p3_repeated_tests.py --start-run 1 --end-run 10
 ~~~
 
 Enviar apenas `out/p3/p3_repeated_runs1-10_complete.zip`, com os CSV/JSON dos 80 ensaios, sumários P2 de controlo, comparações emparelhadas, IC95%, PCAP pertinentes e manifest SHA-256. Os primeiros 8 resultados já foram feitos; restam **72 simulações**, sujeitas a compilação/teste no ns-3.48 local.
+
+## P3 — Auditoria concluída: 80 simulações emparelhadas
+
+O ZIP real `p3_repeated_runs1-10_complete.zip` recebido do grupo foi auditado independentemente: **776/776 hashes SHA256 corretos**, 80 conjuntos de 12000 mensagens geradas, contagens de receção verificadas nos CSV e os **20 controlos P3 reference coincidentes com P2**. Os 10 pares de cada cenário permitiram calcular ganhos médios de entrega dentro de 60 s:
+
+| Cenário v=15 m/s, stop=0 | Imediato | FIFO | Ganho FIFO (pp) | IC95% do ganho (pp) |
+|---|---:|---:|---:|---|
+| Referência | 12,804% | 46,129% | +33,325 | [33,319; 33,331] |
+| Fading Nakagami m=5, ARP dinâmico | 4,091% | 13,347% | +9,256 | [−1,409; 19,920] |
+| Segunda STA a oferecer UDP 2 Mbit/s | 12,636% | 35,593% | +22,957 | [22,627; 23,287] |
+| FIFO com pacing 3 ms | 12,804% (referência) | 42,678% | +29,873 | [29,840; 29,907] |
+| FIFO com 2 MB | 12,804% (referência) | 29,463% | +16,658 | [16,652; 16,665] |
+
+**Atenção ao fading:** apenas as runs **1, 5 e 9** receberam UDP nas duas políticas; as restantes **7/10 runs** tiveram zero entregas, apesar de a STA reportar associação. Os 32 PCAP incluídos no ZIP mostram, nas runs falhadas, **ARP Requests sem Replies e sem tramas IPv4 observadas**. Não excluir estas runs para produzir estatísticas mais favoráveis, nem interpretar a média condicionada a contacto funcional como desempenho global. O IC t em fading inclui zero e é frágil para uma distribuição com sete zeros. Nas três runs funcionais, FIFO entregou +3746/+3583/+3778 mensagens relativamente ao imediato.
+
+A concorrência reduziu o ganho FIFO em média **10,368 pp**; o pacing 3 ms reduziu a entrega FIFO em **3,452 pp**, e reduzir o buffer de 4 MB para 2 MB retirou **exatamente 2000 mensagens recebidas por run**, nesta configuração. A FIFO continua superior ao imediato em todos os pares com contacto funcional dos casos ensaiados, mas introduz atrasos grandes. **Goodput por segundo associado NÃO mede airtime PHY.**
+
+**Documento principal para redação e apresentação:** [docs/25_p3_auditoria_final_80_simulacoes.md](docs/25_p3_auditoria_final_80_simulacoes.md). Não é necessário repetir as simulações por rotina; o próximo passo é organizar resultados, figuras e discussão crítica, mantendo todas as limitações explícitas.
