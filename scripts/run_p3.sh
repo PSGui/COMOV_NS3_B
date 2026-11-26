@@ -46,5 +46,5 @@ PREFIX="$ROOT/out/p3/p3_${SCENARIO}_v${SPEED}_stop${STOP}_run${RUN}_${POLICY}_pa
 echo "P3 output prefix: $PREFIX"
 cd "$NS3_DIR"
 ./ns3 run "scratch/b10-p3-stress --scenario=$SCENARIO --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --pacingMs=$PACE --bufferBytes=$CAPACITY --backgroundRateBps=2000000 --prefix=$PREFIX"
-python3 "$ROOT/scripts/review_p2.py" --prefix "$PREFIX"
+python3 "$ROOT/scripts/review_p3.py" --prefix "$PREFIX"
 echo "P3 validated CSV prefix: $PREFIX"
