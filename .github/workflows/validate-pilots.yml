@@ -34,3 +34,5 @@ jobs:
         run: python3 scripts/test_p3_mac_path_diagnostic.py
       - name: Validate P3 fading severity experiment and isolated filenames
         run: python3 scripts/test_p3_fading_severity.py
+      - name: Validate repeated P3 paired design and Student-t statistics
+        run: python3 scripts/test_p3_repeated_tests.py
