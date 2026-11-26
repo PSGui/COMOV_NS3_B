@@ -170,6 +170,14 @@ def main():
             "delta_on_time_vs_reference_fifo": (
                 delivered - int(original_fifo["received_on_time"])
             ),
+            "fifo_gain_vs_immediate_same_channel": (
+                delivered - int(
+                    result[(scenario, "immediate", 2, 4000000)]["received_on_time"]
+                    if scenario in ("fading", "contention") else
+                    ref["received_on_time"]
+                )
+                if policy == "fifo" else ""
+            ),
         })
     output = ROOT / "out" / "p3" / (
         f"p3_pilots_v{args.speed}_stop{args.stop}_run{args.run}.csv"
