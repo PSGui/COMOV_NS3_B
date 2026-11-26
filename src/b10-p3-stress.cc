@@ -554,6 +554,23 @@ main(int argc, char** argv)
     g.loss->SetAttribute("ReferenceDistance", DoubleValue(1.0));
     g.loss->SetAttribute("ReferenceLoss", DoubleValue(referenceLoss));
 
+    // Separate deterministic monitor; sampled traces must not consume
+    // any random fading draws that change simulated packet delivery.
+    g.monitorLoss = CreateObject<LogDistancePropagationLossModel>();
+    g.monitorLoss->SetAttribute("Exponent", DoubleValue(exponent));
+    g.monitorLoss->SetAttribute("ReferenceDistance", DoubleValue(1.0));
+    g.monitorLoss->SetAttribute("ReferenceLoss", DoubleValue(referenceLoss));
+    if (scenario == "fading")
+    {
+        // Rayleigh small-scale fading: Nakagami m=1 at all distances.
+        // This is a declared stress test, not a calibrated real street.
+        auto fading = CreateObject<NakagamiPropagationLossModel>();
+        fading->SetAttribute("m0", DoubleValue(1.0));
+        fading->SetAttribute("m1", DoubleValue(1.0));
+        fading->SetAttribute("m2", DoubleValue(1.0));
+        g.loss->SetNext(fading);
+    }
+
     auto channel = CreateObject<YansWifiChannel>();
     channel->SetPropagationDelayModel(CreateObject<ConstantSpeedPropagationDelayModel>());
     channel->SetPropagationLossModel(g.loss);
@@ -584,6 +601,20 @@ main(int argc, char** argv)
                 "ActiveProbing", BooleanValue(true));
     NetDeviceContainer busDevices = wifi.Install(phy, mac, busNode);
 
+    // Independent Wi-Fi STA. It competes for the SAME AP and channel.
+    NodeContainer backgroundNode;
+    NetDeviceContainer backgroundDevices;
+    if (scenario == "contention")
+    {
+        backgroundNode.Create(1);
+        MobilityHelper backgroundMob;
+        backgroundMob.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+        backgroundMob.Install(backgroundNode);
+        backgroundNode.Get(0)->GetObject<ConstantPositionMobilityModel>()
+            ->SetPosition(Vector(10.0, 0.0, 2.5));
+        backgroundDevices = wifi.Install(phy, mac, backgroundNode);
+    }
+
     g.mac = DynamicCast<StaWifiMac>(DynamicCast<WifiNetDevice>(
         busDevices.Get(0))->GetMac());
     NS_ABORT_MSG_IF(!g.mac, "Cannot access StaWifiMac for association trace");
@@ -597,11 +628,19 @@ main(int argc, char** argv)
     InternetStackHelper internet;
     internet.Install(apNode);
     internet.Install(busNode);
+    if (scenario == "contention")
+    {
+        internet.Install(backgroundNode);
+    }
     Ipv4AddressHelper addresses;
     addresses.SetBase("10.8.0.0", "255.255.255.0");
     NetDeviceContainer wifiDevices;
     wifiDevices.Add(apDevices);
     wifiDevices.Add(busDevices);
+    if (scenario == "contention")
+    {
+        wifiDevices.Add(backgroundDevices);
+    }
     const Ipv4InterfaceContainer interfaces = addresses.Assign(wifiDevices);
     const Ipv4Address apAddress = interfaces.GetAddress(0);
     g.apIpv4 = apAddress;
@@ -612,6 +651,25 @@ main(int argc, char** argv)
                                                    kUdpPort)) != 0,
                     "AP UDP receiver bind failed");
     receiver->SetRecvCallback(MakeCallback(&OnDatagram));
+
+    if (scenario == "contention")
+    {
+        Ptr<Socket> backgroundSink =
+            Socket::CreateSocket(apNode.Get(0), UdpSocketFactory::GetTypeId());
+        NS_ABORT_MSG_IF(
+            backgroundSink->Bind(InetSocketAddress(
+                Ipv4Address::GetAny(), kBackgroundUdpPort)) != 0,
+            "Background UDP sink bind failed");
+        backgroundSink->SetRecvCallback(MakeCallback(&OnBackgroundDatagram));
+
+        OnOffHelper backgroundTraffic(
+            "ns3::UdpSocketFactory",
+            InetSocketAddress(apAddress, kBackgroundUdpPort));
+        backgroundTraffic.SetConstantRate(DataRate(backgroundRateBps), kPayloadBytes);
+        auto apps = backgroundTraffic.Install(backgroundNode);
+        apps.Start(Seconds(5.0));
+        apps.Stop(Seconds(135.0));
+    }
 
     g.sender = Socket::CreateSocket(busNode.Get(0), UdpSocketFactory::GetTypeId());
     NS_ABORT_MSG_IF(g.sender->Bind() != 0, "Bus UDP sender bind failed");
