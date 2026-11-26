@@ -724,7 +724,8 @@ main(int argc, char** argv)
                "associated_duration_s,assoc_events,deassoc_events,policy,"
                "buffer_enqueued,buffer_overflow,buffer_expired,buffer_sent_attempts,"
                "buffer_remaining,buffer_peak_bytes,buffer_limit_bytes,pacing_ms,"
-               "path_loss_exponent,tx_dbm,wifi_standard,frequency_hz\n";
+               "path_loss_exponent,tx_dbm,wifi_standard,frequency_hz,"
+               "scenario,background_rate_bps,background_rx_packets,background_rx_bytes\n";
     summary << std::fixed << std::setprecision(9)
             << speed << ',' << stopSeconds << ',' << apX << ',' << seed << ',' << run
             << ',' << g.generated << ',' << g.dropNoAssociation << ','
@@ -739,9 +740,11 @@ main(int argc, char** argv)
             << g.expiredBeforeSend << ',' << g.bufferSendAttempts << ','
             << g.queue.size() << ',' << g.maximumBufferedBytes << ','
             << g.bufferLimitBytes << ',' << g.pacingMs << ','
-            << exponent << ',' << txDbm << ",802.11g,2412000000\n";
+            << exponent << ',' << txDbm << ",802.11g,2412000000,"
+            << scenario << ',' << (scenario == "contention" ? backgroundRateBps : 0)
+            << ',' << g.backgroundRxPackets << ',' << g.backgroundRxBytes << '\n';
 
-    std::cout << "P2 ns-3.48: policy=" << g.policy
+    std::cout << "P3 ns-3.48: scenario=" << g.scenario << ", policy=" << g.policy
               << ", speed=" << speed << " m/s, stop=" << stopSeconds
               << " s, seed=" << seed << ", run=" << run << '\n'
               << "Generated=" << g.generated << ", no-association drops="
@@ -756,6 +759,8 @@ main(int argc, char** argv)
               << ", assoc=" << g.associationEvents
               << ", deassoc=" << g.disassociationEvents
               << ", assoc seconds=" << associatedS << '\n'
+              << "Competing STA RX at AP=" << g.backgroundRxPackets
+              << " packets (" << g.backgroundRxBytes << " bytes)\n"
               << "FIFO peak=" << g.maximumBufferedBytes << " bytes, remaining="
               << g.queue.size() << " messages, pacing=" << g.pacingMs << " ms\n"
               << "CSV prefix: " << prefix << '\n';
