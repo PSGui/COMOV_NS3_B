@@ -3,8 +3,8 @@
 # Scenario source is SEPARATE from the validated P2 120-run program.
 set -euo pipefail
 
-if [[ $# -ne 8 && $# -ne 9 ]]; then
-  echo "Usage: $0 NS3_DIR scenario policy speed stop run pacing_ms buffer_bytes [staticArp=0|1]" >&2
+if [[ $# -lt 8 || $# -gt 10 ]]; then
+  echo "Usage: $0 NS3_DIR scenario policy speed stop run pacing_ms buffer_bytes [staticArp=0|1] [macDiagnostics=0|1]" >&2
   exit 2
 fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,6 +17,7 @@ RUN="$6"
 PACE="$7"
 CAPACITY="$8"
 STATIC_ARP="${9:-0}"
+MAC_DIAG="${10:-0}"
 if [[ ! -x "$NS3_DIR/ns3" || ! -d "$NS3_DIR/scratch" ]]; then
   echo "Invalid ns-3 directory: $NS3_DIR" >&2; exit 2
 fi
@@ -41,6 +42,12 @@ fi
 if [[ "$STATIC_ARP" == "1" && "$SCENARIO" != "fading" ]]; then
   echo "staticArp diagnostic applies only to fading" >&2; exit 2
 fi
+if [[ "$MAC_DIAG" != "0" && "$MAC_DIAG" != "1" ]]; then
+  echo "macDiagnostics must be 0/1" >&2; exit 2
+fi
+if [[ "$MAC_DIAG" == "1" && ( "$STATIC_ARP" != "1" || "$SCENARIO" != "fading" ) ]]; then
+  echo "macDiagnostics requires fading with staticArp=1" >&2; exit 2
+fi
 python3 "$ROOT/scripts/check_wifi_modes.py"
 SRC="$ROOT/src/b10-p3-stress.cc"
 DEST="$NS3_DIR/scratch/b10-p3-stress.cc"
@@ -53,8 +60,11 @@ PREFIX="$ROOT/out/p3/p3_${SCENARIO}_v${SPEED}_stop${STOP}_run${RUN}_${POLICY}_pa
 if [[ "$STATIC_ARP" == "1" ]]; then
   PREFIX="${PREFIX}_staticarp"
 fi
+if [[ "$MAC_DIAG" == "1" ]]; then
+  PREFIX="${PREFIX}_macdiag"
+fi
 echo "P3 output prefix: $PREFIX"
 cd "$NS3_DIR"
-./ns3 run "scratch/b10-p3-stress --scenario=$SCENARIO --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --pacingMs=$PACE --bufferBytes=$CAPACITY --backgroundRateBps=2000000 --staticArp=$STATIC_ARP --prefix=$PREFIX"
+./ns3 run "scratch/b10-p3-stress --scenario=$SCENARIO --policy=$POLICY --speed=$SPEED --stop=$STOP --seed=1 --run=$RUN --pacingMs=$PACE --bufferBytes=$CAPACITY --backgroundRateBps=2000000 --staticArp=$STATIC_ARP --macDiagnostics=$MAC_DIAG --prefix=$PREFIX"
 python3 "$ROOT/scripts/review_p3.py" --prefix "$PREFIX"
 echo "P3 validated CSV prefix: $PREFIX"
