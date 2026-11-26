@@ -533,6 +533,7 @@ main(int argc, char** argv)
     double apX{0.0};
     double exponent{3.0};
     double txDbm{20.0};
+    double fadingM{1.0};
     std::string scenario{"reference"};
     uint64_t backgroundRateBps{2000000};
     bool staticArp{false};
