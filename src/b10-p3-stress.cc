@@ -193,27 +193,27 @@ OnDisassociation(Mac48Address apMac)
 // Passive upper-MAC and IPv4 trace points, enabled ONLY for fading+static
 // ARP diagnosis. PCAP captures monitor-mode frames, not proof of IPv4 delivery.
 void
-OnApMacRx(Ptr<const Packet> packet)
+OnApMacRx(Ptr<const Packet>)
 {
     ++g.apMacRx;
 }
 void
-OnApMacRxDrop(Ptr<const Packet> packet)
+OnApMacRxDrop(Ptr<const Packet>)
 {
     ++g.apMacRxDrop;
 }
 void
-OnApMacPromiscRx(Ptr<const Packet> packet)
+OnApMacPromiscRx(Ptr<const Packet>)
 {
     ++g.apMacPromiscRx;
 }
 void
-OnBusMacTx(Ptr<const Packet> packet)
+OnBusMacTx(Ptr<const Packet>)
 {
     ++g.busMacTx;
 }
 void
-OnApIpv4Rx(Ptr<const Packet> packet, Ptr<Ipv4> ipv4, uint32_t interface)
+OnApIpv4Rx(Ptr<const Packet>, Ptr<Ipv4>, uint32_t)
 {
     ++g.apIpv4Rx;
 }
