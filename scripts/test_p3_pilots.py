@@ -42,6 +42,11 @@ class P3PilotsTests(unittest.TestCase):
                 writer.writerow(row)
             self.assertFalse(valid_existing(path,"fading","fifo",15,0,1,2,4000000))
             Path(str(path)+"_analysis.json").write_text("{}", encoding="utf-8")
+            Path(str(path)+"_association_raw.csv").write_text(
+                "t_s,callback,already_open,sta_is_associated,bus_x_m,distance_ap_m,ap_mac\n",
+                encoding="utf-8")
+            for radio in ("ap", "bus"):
+                Path(str(path)+f"_pcap_{radio}-0-0.pcap").write_bytes(b"synthetic-pcap")
             self.assertTrue(valid_existing(path,"fading","fifo",15,0,1,2,4000000))
             self.assertFalse(valid_existing(path,"contention","fifo",15,0,1,2,4000000))
             self.assertFalse(valid_existing(path,"fading","fifo",15,0,1,3,4000000))
@@ -56,6 +61,16 @@ class P3PilotsTests(unittest.TestCase):
         self.assertIn("backgroundTraffic.SetConstantRate", p3)
         self.assertIn("backgroundRxPackets", p3)
         self.assertIn("ErpOfdmRate6Mbps", p3)
+        self.assertIn("associationRawCsv", p3)
+        self.assertIn('phy.EnablePcap(prefix + "_pcap_ap"', p3)
+        self.assertIn('phy.EnablePcap(prefix + "_pcap_bus"', p3)
+        p3_reviewer = (ROOT / "scripts/review_p3.py").read_text(
+            encoding="utf-8")
+        self.assertIn("ignored_deassoc_callbacks", p3_reviewer)
+        p3_pack = (ROOT / "scripts/pack_p3_results.py").read_text(
+            encoding="utf-8")
+        self.assertIn("association_raw.csv", p3_pack)
+        self.assertIn(".pcap", p3_pack)
         self.assertNotIn("NakagamiPropagationLossModel", p2)
         self.assertNotIn("backgroundRxPackets", p2)
 

@@ -72,6 +72,8 @@ struct Pilot
     uint32_t receivedLate{0};
     uint32_t associationEvents{0};
     uint32_t disassociationEvents{0};
+    uint32_t ignoredAssocCallbacks{0};
+    uint32_t ignoredDeassocCallbacks{0};
     bool associationOpen{false};
     double associationStartS{0.0};
     double totalAssociatedS{0.0};
@@ -93,6 +95,7 @@ struct Pilot
     std::ofstream generatedCsv;
     std::ofstream receivedCsv;
     std::ofstream associationCsv;
+    std::ofstream associationRawCsv;
     std::ofstream mobilityCsv;
 } g;
 
@@ -129,16 +132,32 @@ ReadUInt64(const uint8_t* bytes)
 
 void ScheduleFlush();
 
+// The P3 fading scenario may generate DeAssoc callbacks without a preceding
+// successful Assoc trace. Preserve every raw callback for diagnosis, while
+// writing only proper association state transitions to association.csv.
+void
+LogRawAssociation(const char* type, Mac48Address apMac)
+{
+    g.associationRawCsv << Simulator::Now().GetSeconds() << ',' << type << ','
+                        << (g.associationOpen ? 1 : 0) << ','
+                        << (g.mac->IsAssociated() ? 1 : 0) << ','
+                        << g.bus->GetPosition().x << ',' << Distance3d()
+                        << ',' << apMac << '\n';
+}
+
 void
 OnAssociation(Mac48Address apMac)
 {
+    LogRawAssociation("assoc_cb", apMac);
+    if (g.associationOpen)
+    {
+        ++g.ignoredAssocCallbacks;
+        return;
+    }
     const double now = Simulator::Now().GetSeconds();
     ++g.associationEvents;
-    if (!g.associationOpen)
-    {
-        g.associationOpen = true;
-        g.associationStartS = now;
-    }
+    g.associationOpen = true;
+    g.associationStartS = now;
     g.associationCsv << now << ",assoc," << apMac << ','
                      << g.bus->GetPosition().x << ',' << Distance3d() << '\n';
     ScheduleFlush();
@@ -147,13 +166,16 @@ OnAssociation(Mac48Address apMac)
 void
 OnDisassociation(Mac48Address apMac)
 {
+    LogRawAssociation("deassoc_cb", apMac);
+    if (!g.associationOpen)
+    {
+        ++g.ignoredDeassocCallbacks;
+        return;
+    }
     const double now = Simulator::Now().GetSeconds();
     ++g.disassociationEvents;
-    if (g.associationOpen)
-    {
-        g.totalAssociatedS += now - g.associationStartS;
-        g.associationOpen = false;
-    }
+    g.totalAssociatedS += now - g.associationStartS;
+    g.associationOpen = false;
     g.associationCsv << now << ",deassoc," << apMac << ','
                      << g.bus->GetPosition().x << ',' << Distance3d() << '\n';
 }
@@ -514,6 +536,8 @@ main(int argc, char** argv)
             "seq,t_gen_s,t_rx_s,delay_s,on_time,duplicate,associated_at_reception");
     OpenCsv(g.associationCsv, prefix + "_association.csv",
             "t_s,event,ap_mac,bus_x_m,distance_ap_m");
+    OpenCsv(g.associationRawCsv, prefix + "_association_raw.csv",
+            "t_s,callback,already_open,sta_is_associated,bus_x_m,distance_ap_m,ap_mac");
     OpenCsv(g.mobilityCsv, prefix + "_mobility.csv",
             "t_s,bus_x_m,bus_velocity_mps,distance_ap_m,associated,pr_model_dbm");
     OpenCsv(g.bufferEventsCsv, prefix + "_buffer.csv",
@@ -613,6 +637,14 @@ main(int argc, char** argv)
         backgroundNode.Get(0)->GetObject<ConstantPositionMobilityModel>()
             ->SetPosition(Vector(10.0, 0.0, 2.5));
         backgroundDevices = wifi.Install(phy, mac, backgroundNode);
+    }
+
+    // Capture management frames, ARP and UDP in the fading pilot.
+    // Packet capture does not replace the per-message CSV accounting.
+    if (scenario == "fading")
+    {
+        phy.EnablePcap(prefix + "_pcap_ap", apDevices);
+        phy.EnablePcap(prefix + "_pcap_bus", busDevices);
     }
 
     g.mac = DynamicCast<StaWifiMac>(DynamicCast<WifiNetDevice>(
@@ -725,7 +757,8 @@ main(int argc, char** argv)
                "buffer_enqueued,buffer_overflow,buffer_expired,buffer_sent_attempts,"
                "buffer_remaining,buffer_peak_bytes,buffer_limit_bytes,pacing_ms,"
                "path_loss_exponent,tx_dbm,wifi_standard,frequency_hz,"
-               "scenario,background_rate_bps,background_rx_packets,background_rx_bytes\n";
+               "scenario,background_rate_bps,background_rx_packets,background_rx_bytes,"
+               "ignored_assoc_callbacks,ignored_deassoc_callbacks\n";
     summary << std::fixed << std::setprecision(9)
             << speed << ',' << stopSeconds << ',' << apX << ',' << seed << ',' << run
             << ',' << g.generated << ',' << g.dropNoAssociation << ','
@@ -742,7 +775,8 @@ main(int argc, char** argv)
             << g.bufferLimitBytes << ',' << g.pacingMs << ','
             << exponent << ',' << txDbm << ",802.11g,2412000000,"
             << scenario << ',' << (scenario == "contention" ? backgroundRateBps : 0)
-            << ',' << g.backgroundRxPackets << ',' << g.backgroundRxBytes << '\n';
+            << ',' << g.backgroundRxPackets << ',' << g.backgroundRxBytes
+            << ',' << g.ignoredAssocCallbacks << ',' << g.ignoredDeassocCallbacks << '\n';
 
     std::cout << "P3 ns-3.48: scenario=" << g.scenario << ", policy=" << g.policy
               << ", speed=" << speed << " m/s, stop=" << stopSeconds
@@ -761,6 +795,8 @@ main(int argc, char** argv)
               << ", assoc seconds=" << associatedS << '\n'
               << "Competing STA RX at AP=" << g.backgroundRxPackets
               << " packets (" << g.backgroundRxBytes << " bytes)\n"
+              << "Ignored Assoc/DeAssoc callbacks=" << g.ignoredAssocCallbacks
+              << "/" << g.ignoredDeassocCallbacks << "\n"
               << "FIFO peak=" << g.maximumBufferedBytes << " bytes, remaining="
               << g.queue.size() << " messages, pacing=" << g.pacingMs << " ms\n"
               << "CSV prefix: " << prefix << '\n';

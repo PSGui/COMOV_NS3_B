@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SUFFIXES = (
     "summary.csv", "association.csv", "received.csv", "generated.csv",
     "sent.csv", "buffer.csv", "mobility.csv", "analysis.json",
+    "association_raw.csv",
 )
 
 
@@ -34,7 +35,10 @@ def main():
     if not summary.is_file():
         raise FileNotFoundError(f"Run scripts/run_p3_pilots.py first: {summary}")
 
-    paths = [summary]
+    diagnostics = prefix_root / f"{title}_diagnostics.txt"
+    if not diagnostics.is_file():
+        raise FileNotFoundError(f"P3 diagnostics were not produced: {diagnostics}")
+    paths = [summary, diagnostics]
     for scenario, policy, pace, capacity in CASES:
         prefix = prefix_for(
             scenario, policy, args.speed, args.stop, args.run, pace, capacity
@@ -44,6 +48,18 @@ def main():
             if not path.is_file():
                 raise FileNotFoundError(f"Missing evidence for {scenario}/{policy}: {path}")
             paths.append(path)
+        if scenario == "fading":
+            # P3 records management frames, ARP and IP frames even when no
+            # application UDP is delivered. Preserve both PCAP captures.
+            for radio in ("ap", "bus"):
+                pcaps = list(prefix.parent.glob(
+                    prefix.name + "_pcap_" + radio + "*.pcap"
+                ))
+                if len(pcaps) != 1:
+                    raise FileNotFoundError(
+                        f"Expected exactly one {radio} PCAP for {prefix}; got {pcaps}"
+                    )
+                paths.extend(pcaps)
     for policy in ("immediate", "fifo"):
         baseline = (ROOT / "out" / "p2" /
                     f"v{args.speed}_stop{args.stop}_run{args.run}_{policy}_summary.csv")
@@ -61,6 +77,7 @@ def main():
         archive.writestr("P3_SHA256_MANIFEST.txt",
                          "\n".join(checksum_lines) + "\n")
     print(f"ZIP: {destination} ({len(paths)} files + manifest)")
+    print("Includes fading radio PCAPs (AP and bus) and unmatched association callbacks.")
     print("Upload this one ZIP; do not paste 8 logs separately.")
 
 

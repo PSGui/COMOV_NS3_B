@@ -57,6 +57,11 @@ def valid_existing(prefix, scenario, policy, speed, stop, run, pace, capacity):
                  if scenario == "contention" else
                  int(s["background_rate_bps"]) == 0)
             and Path(str(prefix) + "_analysis.json").is_file()
+            and Path(str(prefix) + "_association_raw.csv").is_file()
+            and (scenario != "fading" or all(
+                len(list(prefix.parent.glob(prefix.name + "_pcap_" + radio + "*.pcap"))) == 1
+                for radio in ("ap", "bus")
+            ))
         )
     except (OSError, ValueError, KeyError):
         return False
@@ -90,6 +95,7 @@ def main():
         parser.error(f"not an ns-3 source tree: {ns3}")
 
     result = {}
+    diagnostics = []
     new_count = 0
     for scenario, policy, pace, capacity in CASES:
         prefix = prefix_for(
@@ -98,7 +104,7 @@ def main():
         if (args.skip_existing and valid_existing(
                 prefix, scenario, policy, args.speed, args.stop, args.run,
                 pace, capacity)):
-            execute(sys.executable, "scripts/review_p2.py", "--prefix", prefix)
+            execute(sys.executable, "scripts/review_p3.py", "--prefix", prefix)
         else:
             execute("bash", "scripts/run_p3.sh", ns3, scenario, policy,
                     args.speed, args.stop, args.run, pace, capacity)
@@ -110,6 +116,19 @@ def main():
         if scenario == "contention" and int(s["background_rx_packets"]) == 0:
             raise ValueError("Competing STA traffic NOT observed at AP; invalid contention stress test")
         result[(scenario, policy, pace, capacity)] = s
+        if int(s["assoc_events"]) > 0 and int(s["received_unique"]) == 0:
+            diagnostics.append(
+                f"CRITICAL: {prefix.name}: associated but zero UDP payloads received; "
+                "inspect _association_raw.csv and _pcap_*.pcap before "
+                "interpreting the fading results."
+            )
+        if int(s.get("ignored_deassoc_callbacks", "0")):
+            diagnostics.append(
+                f"ASSOCIATION: {prefix.name}: "
+                f"{s['ignored_deassoc_callbacks']} DeAssoc callbacks without "
+                "a preceding active association interval, all preserved in "
+                "_association_raw.csv."
+            )
 
     # Before studying stress variants, the P3 control MUST reproduce the original
     # P2 results; otherwise physics/implementation changed before the stressor.
@@ -183,7 +202,16 @@ def main():
         f"p3_pilots_v{args.speed}_stop{args.stop}_run{args.run}.csv"
     )
     save_csv(output, records)
-    print(f"\nP3 PASS: 8 validated configurations, {new_count} new executions.")
+    diagnostics_path = output.with_name(output.stem + "_diagnostics.txt")
+    diagnostics_path.write_text(
+        "\n".join(diagnostics or ["No critical diagnostic flags."]) + "\n",
+        encoding="utf-8"
+    )
+    print(f"\nP3 completed: 8 accounting-validated configurations, {new_count} new executions.")
+    for warning in diagnostics:
+        print("P3 WARNING:", warning)
+    print("Accounting PASS does NOT establish PHY/MAC validity when zero UDP "
+          "receptions occur. Check diagnostics and PCAP before interpretation.")
     print("P3 reference exactly reproduces baseline P2 delivery and association.")
     print("NOTE: policy differences under fading/contention may change association.")
     for row in records:
