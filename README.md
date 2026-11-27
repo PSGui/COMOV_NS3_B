@@ -30,6 +30,7 @@ Estudo no ns-3 de transferência UDP entre um autocarro móvel e um AP Wi-Fi dur
 - [P3 — diagnóstico ACK de associação e variação Nakagami m=3/5](docs/23_p3_fading_assoc_ack_e_severidade.md)
 - [P3 — auditoria m=3/5 e dez repetições emparelhadas dos três testes](docs/24_p3_fading_m5_e_dez_runs_paired.md)
 - [P3 — auditoria final de 80 simulações, IC95%, limites científicos](docs/25_p3_auditoria_final_80_simulacoes.md)
+- [Trabalhos relacionados — medição real Zigbee autocarro–paragem (Iqbal et al., 2011), comparação com P2/P3](docs/26_comparacao_estudo_real_zigbee_2011.md)
 - [P1 — auditoria independente dos cinco CSV e análise da fronteira −82 dBm](docs/11_auditoria_p1_csv_v5_stop10.md)
 - [Referências e documentação ns-3](docs/06_referencias.md)
 - [Configuração legível por máquina](params/reference.json)
@@ -299,3 +300,11 @@ O ZIP real `p3_repeated_runs1-10_complete.zip` recebido do grupo foi auditado in
 A concorrência reduziu o ganho FIFO em média **10,368 pp**; o pacing 3 ms reduziu a entrega FIFO em **3,452 pp**, e reduzir o buffer de 4 MB para 2 MB retirou **exatamente 2000 mensagens recebidas por run**, nesta configuração. A FIFO continua superior ao imediato em todos os pares com contacto funcional dos casos ensaiados, mas introduz atrasos grandes. **Goodput por segundo associado NÃO mede airtime PHY.**
 
 **Documento principal para redação e apresentação:** [docs/25_p3_auditoria_final_80_simulacoes.md](docs/25_p3_auditoria_final_80_simulacoes.md). Não é necessário repetir as simulações por rotina; o próximo passo é organizar resultados, figuras e discussão crítica, mantendo todas as limitações explícitas.
+
+## Trabalho relacionado: medições reais de comunicação autocarro–paragem (Zigbee, 2011)
+
+Iqbal, Yukimatsu e Ichikawa (iJOE 7(3), 2011, [DOI 10.3991/ijoe.v7i3.1579](https://doi.org/10.3991/ijoe.v7i3.1579)) fizeram ensaios físicos com XBee/Zigbee em paragens: mensagens de até **7 bytes**, transmitidas **uma vez por segundo**. A **100 m**, registaram **18/18** receções em linha de vista, **28/36** com árvores e **6/18** com edifícios. A ideia de **janela de contacto limitada pela geometria e obstáculos** é diretamente relevante ao B10, que avalia a transferência Wi-Fi entre autocarro e RSU/paragem e a vantagem de guardar mensagens para descarregar durante contacto.
+
+**Advertência metodológica:** as taxas de insucesso Zigbee referem-se a **mensagens de 7 B efetivamente tentadas**, enquanto as percentagens P2/P3 usam **mensagens UDP de 1000 B geradas**; algumas nem chegam à socket ou ao meio rádio. Zigbee e Wi-Fi têm protocolos e modelos de receção distintos. A falha de UDP em **7/10 runs** de Nakagami m=5 na P3 **não é comparável** a 66,67% de insucesso Zigbee por edifícios; serve apenas para uma discussão **qualitativa** da dependência do contacto útil das condições rádio. O artigo não compara FIFO a envio imediato nem mede buffer: essa é a contribuição específica da P2/P3.
+
+Ver análise, tabela comparativa, limites e parágrafo pronto para revisão bibliográfica em [docs/26_comparacao_estudo_real_zigbee_2011.md](docs/26_comparacao_estudo_real_zigbee_2011.md). Não alterar o modelo para igualar percentagens de tecnologias incompatíveis.
